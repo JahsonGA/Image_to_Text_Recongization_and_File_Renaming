@@ -21,9 +21,9 @@ def process_images(input_folder, output_folder, review_folder):
                 move(image_path, os.path.join(review_folder, filename))
 
 if __name__ == "__main__":
-    input_folder = "input_images"
+    input_folder = "unnamed_file"
     output_folder = "complete_images"
-    review_folder = "review_images"
+    review_folder = "manual_review_images"
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
