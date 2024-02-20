@@ -6,104 +6,113 @@ import os
 import re
 import tempfile
 
-
 pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 
-def set_image_dpi(file_path):
-    im = Image.open(file_path)
-    length_x, width_y = im.size
+'''Skew Correction
+While scanning or taking a picture of any document, 
+it is possible that the scanned or captured image might be slightly skewed sometimes. 
+For the better performance of the OCR, it is good to determine the skewness in image and correct it.'''
+def deskew(image):
+    coords = np.column_stack(np.where(image > 0))
+    angle = cv2.minAreaRect(coords)[-1]
+    if angle < -45:
+        angle = -(90 + angle)
+    else:
+        angle = -angle
+    (h, w) = image.shape[:2]
+    center = (w // 2, h // 2)
+    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+    rotated = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC,
+    borderMode=cv2.BORDER_REPLICATE)
+    return rotated
+
+'''Image Scaling
+To achieve a better performance of OCR, 
+the image should have more than 300 PPI (pixel per inch). 
+So, if the image size is less than 300 PPI, we need to increase it. 
+We can use the Pillow library for this.'''
+def set_image_dpi(image):
+    length_x, width_y = image.shape[1], image.shape[0]
     factor = min(1, float(1024.0 / length_x))
     size = int(factor * length_x), int(factor * width_y)
-    im_resized = im.resize(size, Image.LANCZOS)
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.tif')
+    im_resized = cv2.resize(image, size, interpolation=cv2.INTER_AREA)
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
     temp_filename = temp_file.name
-    im_resized.save(temp_filename, dpi=(300, 300))
+    cv2.imwrite(temp_filename, im_resized)
     return temp_filename
 
-def preprocess_image(image):
-    # Convert to grayscale
-    #gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # Gaussian blur to reduce noise
-    blurred = cv2.GaussianBlur(image, (5, 5), 0)
-    
-    # Binary conversion
-    x, binary = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY_INV)
-    
-    # Remove small contours
-    #   findContours returns a modified image, contours of that image and the heirarchery 
-    #   finds the bounds of an image
-    contours, heir = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    areas = [cv2.contourArea(cnt) for cnt in contours]
-    avg_area = np.mean(areas)
-    for cnt in contours:
-        if cv2.contourArea(cnt) < avg_area:
-            cv2.drawContours(binary, [cnt], -1, (0, 0, 0), cv2.FILLED)
-    
-    # Remove lines using canny edge filter and houghlines
-    edges = cv2.Canny(binary, 50, 150)
-    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
-    if lines is not None:
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
-            cv2.line(binary, (x1, y1), (x2, y2), (0, 0, 0), 5)
-    
-    # Run Length Smoothing Algorithm (RLSA)
-    kernel = np.ones((1, 20), np.uint8)
-    binary = cv2.dilate(binary, kernel, iterations=1)
-    
-    # Invert the image
-    binary = cv2.bitwise_not(binary)
-    
-    # Resize image for display
-    cv2.imshow('Image with Bounding Boxes', cv2.resize(binary, (800, 900)))
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    
-    boxes = pytesseract.image_to_boxes(binary)
-    
-    for b in boxes.splitlines():
-        b = b.split(' ')
-        image = cv2.rectangle(binary, (int(b[1]), image.shape[0] - int(b[2])), (int(b[3]), image.shape[0] - int(b[4])), (255, 255, 255), 2)
+'''Noise Removal
+This step removes the small dots/patches 
+which have high intensity compared to the rest of the image for smoothening of 
+the image. OpenCV's fast Nl Means Denoising Coloured function can do that easily.'''
+def remove_noise(image):
+    return cv2.fastNlMeansDenoisingColored(image, None, 10, 10, 7, 15)
 
-    
-    return binary
+'''Gray Scale image
+This process converts an image from other color spaces to shades of Gray. 
+The colour varies between complete black and complete white. 
+OpenCV's cvtColor() function perform this task very easily.'''
+def get_grayscale(image):
+    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-def ocr_from_image(image):
-    # Set image DPI
-    image_with_dpi = set_image_dpi(image)
-    
-    # Preprocess the image
-    image_with_dpi = cv2.imread(image_with_dpi, 0) # Open image in gray scale
-    
-    if np.shape(image_with_dpi) == ():
-        print("Error: with opening image in gray scale")
-    
-    preprocessed_img = preprocess_image(image_with_dpi)
-    
-    # Perform OCR using pytesseract
-    text = pytesseract.image_to_string(preprocessed_img)
-    
-    return text
+'''Thresholding or Binarization
+This step converts any colored image into a binary image that contains only two colors black and white. 
+It is done by fixing a threshold (normally half of the pixel range 0-255, i.e., 127). 
+The pixel value having greater than the threshold is converted into a white pixel else into a black pixel. 
+To determine the threshold value according to the image Otsu's Binarization and Adaptive Binarization can be a better choice. 
+In OpenCV, this can be done as given.'''
+def thresholding(image):
+    return cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU) [1]
 
-def ExtractTEXT(filename, path, TextPath):
-    text = ocr_from_image(filename)  
+def preprocess_for_ocr(image_path):
+    # Read the image
+    image = cv2.imread(image_path)
+
+    # Skew Correction
+    #deskewed_image = deskew(image)
     
-    # Display the text
-    print("Text Extracted:")
-    print(text)
+    # Noise Removal
+    denoised_image = remove_noise(image)
 
-    
+    # Grayscale Conversion
+    grayscale_image = get_grayscale(denoised_image)
 
-    # Write the extracted text to a text file
-    file = os.path.basename(re.sub('.tif+', '', filename) + ".txt")  # Find the file name for the text file using regex
+    # Thresholding
+    thresholded_image = thresholding(grayscale_image)
 
-    with open(os.path.join(TextPath, file), 'w') as txt_file:   # Write to the text file the extracted image file
-        txt_file.write(text)                                    # ding boxes around the words        
+    # Thinning and Skeletonization
+    kernel = np.ones((5,5),np.uint8)
+    erosion = cv2.erode(thresholded_image, kernel, iterations = 1)
+
+    # Normalization
+    norm_img = np.zeros((erosion.shape[0], erosion.shape[1]))
+    normalized_image = cv2.normalize(erosion, norm_img, 0, 255, cv2.NORM_MINMAX)
+
+    # Image Scaling
+    dpi_adjusted_image = set_image_dpi(normalized_image)
+
+    return dpi_adjusted_image
+
+def extract_text_from_folder(input, output):
+     # Iterate over all files in the image folder
+    for file_name in os.listdir(input):
+        # Check if the file is a TIFF image
+        if file_name.endswith(".tif"):
+            # Construct the full path to the image file
+            image_path = os.path.join(input, file_name)
+            # Extract text from the image
+            # Perform OCR using pytesseract
+            text = pytesseract.image_to_string(preprocess_for_ocr(image_path))
+            # Construct the full path to the text file
+            text_file_name = os.path.splitext(file_name)[0] + ".txt"
+            text_file_path = os.path.join(output, text_file_name)
+            # Write the extracted text to the text file
+            with open(text_file_path, 'w') as text_file:
+                text_file.write(text) 
     
    
 if __name__ == "__main__":
     filename = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTap projects\\PennTAP history\\unnamed_file\\20231207095006269.tif"
-    path = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTap projects\\PennTAP history\\unnamed_file"
-    TextPath = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTap projects\\PennTAP history\\unnamed_file\\Textfiles"
-    ExtractTEXT(filename,path,TextPath)
+    input = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTap projects\\PennTAP history\\unnamed_file"
+    output = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTap projects\\PennTAP history\\unnamed_file\\Textfiles"
+    extract_text_from_folder(input,output)
