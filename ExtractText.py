@@ -93,6 +93,31 @@ def preprocess_for_ocr(image_path):
 
     return dpi_adjusted_image
 
+    #TODO TEST this on 2/22/24
+    '''# Read the image
+    image = cv2.imread(image_path)
+
+    # Increase Contrast
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    enhanced_image = cv2.equalizeHist(gray_image)
+
+    # Thresholding
+    _, binary_image = cv2.threshold(enhanced_image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+    # Remove Small Objects
+    kernel = np.ones((3, 3), np.uint8)
+    binary_image = cv2.morphologyEx(binary_image, cv2.MORPH_CLOSE, kernel)
+
+    # Enhance Text Regions
+    binary_image = cv2.dilate(binary_image, kernel, iterations=1)
+
+    # Normalization (Optional)
+    # norm_img = np.zeros((binary_image.shape[0], binary_image.shape[1]))
+    # normalized_image = cv2.normalize(binary_image, norm_img, 0, 255, cv2.NORM_MINMAX)
+
+    # Image Scaling (DPI Adjustment)
+    dpi_adjusted_image = set_image_dpi(binary_image)'''
+
 def extract_text_from_folder(input, output):
      # Iterate over all files in the image folder
     for file_name in os.listdir(input):
