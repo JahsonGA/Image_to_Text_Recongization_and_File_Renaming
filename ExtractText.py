@@ -64,37 +64,46 @@ In OpenCV, this can be done as given.'''
 def thresholding(image):
     return cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU) [1]
 
-def preprocess_for_ocr(image_path):
+'''Shows the edited image with boxes will the letter opencv sees'''
+
+def show_detected_text(image_path):
     # Read the image
     image = cv2.imread(image_path)
-
-    # Skew Correction
-    #deskewed_image = deskew(image)
     
-    # Noise Removal
-    denoised_image = remove_noise(image)
+    # Perform text detection using pytesseract
+    boxes = pytesseract.image_to_boxes(image_path)
+    
+    #extract text is already done in another function
+    '''# Extract detected text regions and text
+    detected_text_regions = []
+    detected_text = []
+    for box in boxes.splitlines():
+        box = box.split(' ')
+        x, y, w, h = int(box[1]), int(box[2]), int(box[3]), int(box[4])
+        detected_text_regions.append((x, y, w, h))
+        detected_text.append(box[0])
+        
+        # Draw bounding box and text on the image
+        cv2.rectangle(image, (x, y), (w, h), (0, 0, 255), 2)  # Red color for bounding box
+        cv2.putText(image, box[0], (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)  # Red color for text'''
+        
+        
+        # Draw bounding boxes and write text in red
+    for box in boxes.splitlines():
+        box = box.split(' ')
+        x, y, w, h = int(box[1]), int(box[2]), int(box[3]), int(box[4])
+        image = cv2.rectangle(image, (int(box[1]), image.shape[0] - int(box[2])), (int(box[3]), image.shape[0] - int(box[4])), (0, 0, 255), 2) # Red color for bounding box
+        cv2.putText(image, box[0], (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2) # Red color for text
+    
+    # Display the image
+    cv2.imshow('Detected Text', cv2.resize(image,(800,900)))
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
-    # Grayscale Conversion
-    grayscale_image = get_grayscale(denoised_image)
 
-    # Thresholding
-    thresholded_image = thresholding(grayscale_image)
-
-    # Thinning and Skeletonization
-    kernel = np.ones((5,5),np.uint8)
-    erosion = cv2.erode(thresholded_image, kernel, iterations = 1)
-
-    # Normalization
-    norm_img = np.zeros((erosion.shape[0], erosion.shape[1]))
-    normalized_image = cv2.normalize(erosion, norm_img, 0, 255, cv2.NORM_MINMAX)
-
-    # Image Scaling
-    dpi_adjusted_image = set_image_dpi(normalized_image)
-
-    return dpi_adjusted_image
-
-    #TODO TEST this on 2/22/24
-    '''# Read the image
+def preprocess_for_ocr(image_path):
+    #TODO refine image processing
+    # Read the image
     image = cv2.imread(image_path)
 
     # Increase Contrast
@@ -114,9 +123,18 @@ def preprocess_for_ocr(image_path):
     # Normalization (Optional)
     # norm_img = np.zeros((binary_image.shape[0], binary_image.shape[1]))
     # normalized_image = cv2.normalize(binary_image, norm_img, 0, 255, cv2.NORM_MINMAX)
+    
+    # Find contours and bounding boxes
+    '''contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    bounding_boxes = [cv2.boundingRect(cnt) for cnt in contours]'''
+    
+    # Removes pixels on object boundaries.
+    erosion = cv2.erode(binary_image, kernel, iterations=1)
 
     # Image Scaling (DPI Adjustment)
-    dpi_adjusted_image = set_image_dpi(binary_image)'''
+    dpi_adjusted_image = set_image_dpi(erosion)
+    
+    return dpi_adjusted_image
 
 def extract_text_from_folder(input, output):
      # Iterate over all files in the image folder
@@ -124,10 +142,15 @@ def extract_text_from_folder(input, output):
         # Check if the file is a TIFF image
         if file_name.endswith(".tif"):
             # Construct the full path to the image file
-            image_path = os.path.join(input, file_name)
+            image_path = os.path.join(input, file_name)    
             # Extract text from the image
             # Perform OCR using pytesseract
-            text = pytesseract.image_to_string(preprocess_for_ocr(image_path))
+            img = preprocess_for_ocr(image_path)
+            text = pytesseract.image_to_string(img)
+            
+            # Calls display funcation
+            show_detected_text(img)
+            
             # Construct the full path to the text file
             text_file_name = os.path.splitext(file_name)[0] + ".txt"
             text_file_path = os.path.join(output, text_file_name)
