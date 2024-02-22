@@ -114,7 +114,7 @@ def preprocess_for_ocr(image_path):
     _, binary_image = cv2.threshold(enhanced_image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
     # Remove Small Objects
-    kernel = np.ones((3, 3), np.uint8)
+    kernel = np.ones((2, 2), np.uint8)
     binary_image = cv2.morphologyEx(binary_image, cv2.MORPH_CLOSE, kernel)
 
     # Enhance Text Regions
