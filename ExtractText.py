@@ -111,10 +111,28 @@ def preprocess_for_ocr(image_path):
     enhanced_image = cv2.equalizeHist(gray_image)
 
     # Thresholding
-    _, binary_image = cv2.threshold(enhanced_image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    #Works many words but no numbers and struggles with images. 
+    #_, binary_image = cv2.threshold(enhanced_image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    
+    #imgf contains Binary image)
+    #Found number buts less words
+    #binary_image = cv2.adaptiveThreshold(enhanced_image,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2) 
+    
+    #This section works the best of find both the most amount of words and the numbers with the least unknown values
+    # global thresholding
+    ret1,binary_imageG = cv2.threshold(enhanced_image,127,255,cv2.THRESH_BINARY)
+    # Otsu's thresholding
+    ret2,binary_imageO = cv2.threshold(binary_imageG,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    # Otsu's thresholding after Gaussian filtering
+    blur = cv2.GaussianBlur(binary_imageO,(5,5),0)
+    ret3,binary_image = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    
+    #TODO
+    # Look for a way to correct skew in sections of an image.
+    # Once this is complete the text detection and extraction should be done. 
 
     # Remove Small Objects
-    kernel = np.ones((2, 2), np.uint8)
+    kernel = np.ones((1, 1), np.uint8)
     binary_image = cv2.morphologyEx(binary_image, cv2.MORPH_CLOSE, kernel)
 
     # Enhance Text Regions
