@@ -128,7 +128,8 @@ def preprocess_for_ocr(image_path):
     ret3,binary_image = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     
     #TODO
-    # Look for a way to correct skew in sections of an image.
+    # 1) Find a way to calculate the number of binary and inverted binary pixel and pick the value that is 'better'
+    # 2) Look for a way to correct skew in sections of an image.
     # Once this is complete the text detection and extraction should be done. 
 
     # Remove Small Objects
