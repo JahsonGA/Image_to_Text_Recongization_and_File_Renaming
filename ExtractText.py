@@ -64,6 +64,10 @@ In OpenCV, this can be done as given.'''
 def thresholding(image):
     return cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU) [1]
 
+'''counts white pixels'''
+def get_white_pixel_count(image):
+    return np.sum(image == 255)
+
 '''Shows the edited image with boxes will the letter opencv sees'''
 
 def show_detected_text(image_path):
@@ -71,22 +75,7 @@ def show_detected_text(image_path):
     image = cv2.imread(image_path)
     
     # Perform text detection using pytesseract
-    boxes = pytesseract.image_to_boxes(image_path)
-    
-    #extract text is already done in another function
-    '''# Extract detected text regions and text
-    detected_text_regions = []
-    detected_text = []
-    for box in boxes.splitlines():
-        box = box.split(' ')
-        x, y, w, h = int(box[1]), int(box[2]), int(box[3]), int(box[4])
-        detected_text_regions.append((x, y, w, h))
-        detected_text.append(box[0])
-        
-        # Draw bounding box and text on the image
-        cv2.rectangle(image, (x, y), (w, h), (0, 0, 255), 2)  # Red color for bounding box
-        cv2.putText(image, box[0], (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)  # Red color for text'''
-        
+    boxes = pytesseract.image_to_boxes(image_path)        
         
         # Draw bounding boxes and write text in red
     for box in boxes.splitlines():
@@ -110,27 +99,49 @@ def preprocess_for_ocr(image_path):
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     enhanced_image = cv2.equalizeHist(gray_image)
 
-    # Thresholding
-    #Works many words but no numbers and struggles with images. 
-    #_, binary_image = cv2.threshold(enhanced_image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    #TODO
+    # 1) Find a way to calculate the number of binary and inverted binary pixel and pick the value that is 'better'
+    # 2) Look for a way to correct skew in sections of an image.
+    #   2a) This might not be possible within time frame.
+    # Once this is complete the text detection and extraction should be done. 
     
-    #imgf contains Binary image)
-    #Found number buts less words
-    #binary_image = cv2.adaptiveThreshold(enhanced_image,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2) 
+    # Calculate white pixel count for binary and inverted binary images
+    _, binary_image = cv2.threshold(enhanced_image, 127, 255, cv2.THRESH_BINARY)
+    _, inverted_binary_image = cv2.threshold(enhanced_image, 127, 255, cv2.THRESH_BINARY_INV)
+    white_pixel_count_binary = get_white_pixel_count(binary_image)
+    white_pixel_count_inverted_binary = get_white_pixel_count(inverted_binary_image)
+
+    # Choose the 'better' image based on white pixel count
+    if white_pixel_count_binary >= white_pixel_count_inverted_binary:
+        final_image = binary_image
+    else:
+        final_image = inverted_binary_image
+    
+    # Rotates the whole image clockwise by 90 degrees. 
+    '''# Used to rotate part of an image. these regions are correct to increase text recondition. 
+    # Find contours and bounding boxes of text regions
+    contours, _ = cv2.findContours(final_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    for contour in contours:
+        # Get bounding box of the contour
+        x, y, w, h = cv2.boundingRect(contour)
+
+        # Extract the text region from the image
+        text_region = final_image[y:y+h, x:x+w]
+
+        # Apply skew correction to the text region
+        deskewed_text_region = deskew(text_region)
+
+        # Replace the text region in the original image with the deskewed region
+        final_image[y:y+h, x:x+w] = deskewed_text_region'''
     
     #This section works the best of find both the most amount of words and the numbers with the least unknown values
     # global thresholding
-    ret1,binary_imageG = cv2.threshold(enhanced_image,127,255,cv2.THRESH_BINARY)
+    ret1,binary_imageG = cv2.threshold(final_image,127,255,cv2.THRESH_BINARY)
     # Otsu's thresholding
     ret2,binary_imageO = cv2.threshold(binary_imageG,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     # Otsu's thresholding after Gaussian filtering
     blur = cv2.GaussianBlur(binary_imageO,(5,5),0)
     ret3,binary_image = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    
-    #TODO
-    # 1) Find a way to calculate the number of binary and inverted binary pixel and pick the value that is 'better'
-    # 2) Look for a way to correct skew in sections of an image.
-    # Once this is complete the text detection and extraction should be done. 
 
     # Remove Small Objects
     kernel = np.ones((1, 1), np.uint8)
@@ -176,7 +187,6 @@ def extract_text_from_folder(input, output):
             # Write the extracted text to the text file
             with open(text_file_path, 'w') as text_file:
                 text_file.write(text) 
-    
    
 if __name__ == "__main__":
     filename = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTap projects\\PennTAP history\\unnamed_file\\20231207095006269.tif"
