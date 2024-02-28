@@ -104,6 +104,10 @@ def preprocess_for_ocr(image_path):
     # 2) Look for a way to correct skew in sections of an image.
     #   2a) This might not be possible within time frame.
     # Once this is complete the text detection and extraction should be done. 
+    # 3) Compared to online  
+    #   3a) text detection my compares well but can still be improved when black on white background
+    #   3b) When inverted binary online text detection fails. which means mine is better
+    #   3c) Also fails for non standard text placement. Which means mine is the similar
     
     # Calculate white pixel count for binary and inverted binary images
     _, binary_image = cv2.threshold(enhanced_image, 127, 255, cv2.THRESH_BINARY)
@@ -189,7 +193,6 @@ def extract_text_from_folder(input, output):
                 text_file.write(text) 
    
 if __name__ == "__main__":
-    filename = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTap projects\\PennTAP history\\unnamed_file\\20231207095006269.tif"
-    input = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTap projects\\PennTAP history\\unnamed_file"
-    output = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTap projects\\PennTAP history\\unnamed_file\\Textfiles"
+    input = ".\\unnamed_file"
+    output = ".\\unnamed_file\\Textfiles"
     extract_text_from_folder(input,output)
