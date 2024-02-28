@@ -32,14 +32,13 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
                 else:
                     sh.move(os.path.join(image_folder, filename.replace(".txt",".tif")), manual_review_folder)
                     
-# TODO
-#os move funciton isn't working properly. 
+#TODO
+#os move function isn't working properly. 
 #renames the text files and not the image file
 #renaming the file attaches all keywords to the file
 #   algorithm need to learn what keywords are more valuable then others. 
 
-#TODO
-#Compared to online summizer
+#*Compared to online summarizer
 
 
 #TODO try the following of 2/29/24

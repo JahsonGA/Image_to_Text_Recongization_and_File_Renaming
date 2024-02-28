@@ -6,6 +6,7 @@ import os
 import re
 import tempfile
 
+#! BEFORE made public hide file path!
 pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 
 '''Skew Correction
@@ -104,10 +105,10 @@ def preprocess_for_ocr(image_path):
     # 2) Look for a way to correct skew in sections of an image.
     #   2a) This might not be possible within time frame.
     # Once this is complete the text detection and extraction should be done. 
-    # 3) Compared to online  
-    #   3a) text detection my compares well but can still be improved when black on white background
-    #   3b) When inverted binary online text detection fails. which means mine is better
-    #   3c) Also fails for non standard text placement. Which means mine is the similar
+    #*Compared to online  
+    #   a) text detection my compares well but can still be improved when black on white background
+    #   b) When inverted binary online text detection fails. which means mine is better
+    #   c) Also fails for non standard text placement. Which means mine is the similar
     
     # Calculate white pixel count for binary and inverted binary images
     _, binary_image = cv2.threshold(enhanced_image, 127, 255, cv2.THRESH_BINARY)
