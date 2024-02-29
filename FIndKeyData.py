@@ -5,6 +5,7 @@ from nltk.stem import PorterStemmer
 from nltk import punkt
 from collections import Counter
 import shutil as sh
+import re
 
 # Function to extract keywords from text
 def extract_keywords(text, n=5):
@@ -41,59 +42,69 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
 #*Compared to online summarizer
 
 
-#TODO try the following of 2/29/24
-'''def extract_summary_from_text(text):
+def extract_summary_from_text(text):
     summary = {}
 
     # Extract dates using regex
-    date_match = re.search(r'\b(\d{1,2}\/\d{1,2}\/\d{2,4})\b', text)
+    date_match = re.search(r'(?:(?:January|February|March|April|May|June|July|August|September|October|November|December|\d{1,2})\s+\d{1,2},?\s+\d{4})|(?:\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})', text, re.IGNORECASE)
     if date_match:
-        summary['date'] = date_match.group(1)
+        summary['date'] = date_match.group()
 
     # Extract publisher using regex
-    publisher_match = re.search(r'Publisher:\s*(.+)', text)
-    if publisher_match:
-        summary['publisher'] = publisher_match.group(1)
+    news_match = re.search(r'(?:news|newspaper|paper|press|journal)\s+(?:\w+\s+)*', text, re.IGNORECASE)
+    if news_match:
+        summary['publisher'] = news_match.group()
+        
+    #TODO Naming system should follow publisher, date, and keywork summary
+    #* keyword summary can be done with the function to find the summary and then the nltk to find the keywords of the summary. 
+    #*  The threshold should be at most 5 words. 
 
-    # Extract subjects or topics using regex
+    '''# Extract subjects or topics using regex
     subjects_match = re.search(r'Subjects?:\s*(.+)', text)
     if subjects_match:
         summary['subjects'] = subjects_match.group(1).split(',')
 
     # Extract locations using regex
-    locations_match = re.search(r'Locations?:\s*(.+)', text)
+    locations_match = re.search(r'[A-Z][a-zA-Z]+', text)
     if locations_match:
-        summary['locations'] = locations_match.group(1).split(',')
+        summary['locations'] = locations_match.group(1).split(',')'''
 
     return summary
 
-def read_text_file_and_rename_image(text_file_path, image_file_path):
-    # Read text from the text file
+def read_text_file_and_rename_image(text_file_path):
+    # Read text from the text file line by line
+    #! There was an error where it would read the whole text file as one string without \n characters.
+    #!   This caused the problem of the regex being able to match more than it should have.
     with open(text_file_path, 'r') as text_file:
-        text = text_file.read()
-        summary = extract_summary_from_text(text)
+        summary = {}
+        for line in text_file:
+            line_summary = extract_summary_from_text(line)
+            summary.update(line_summary)
 
     # Construct a new file name based on the summary
     new_file_name = ""
     if 'date' in summary:
         new_file_name += summary['date'] + "_"
+    
+    #print(new_file_name)    
+    
     if 'publisher' in summary:
         new_file_name += summary['publisher'] + "_"
-    if 'subjects' in summary:
+        
+    #print(new_file_name)
+    
+    '''if 'subjects' in summary:
         new_file_name += "_".join(summary['subjects']) + "_"
     if 'locations' in summary:
-        new_file_name += "_".join(summary['locations'])
-
-    # Rename the image file
-    new_image_file_path = os.path.join(os.path.dirname(image_file_path), new_file_name + ".tif")
-    os.rename(image_file_path, new_image_file_path)
-'''
-
+        new_file_name += "_".join(summary['locations'])'''
+        
+    print(new_file_name)
 
 if __name__ == "__main__":
-    input_folder = ".\\unnamed_file\\Textfiles"
-    image_folder = ".\\unnamed_file\\"
+    input_folder = ".\\unnamed_file\\Textfiles\\20231207095006269.txt"
+    image_folder = ".\\unnamed_file"
     output_folder = ".\\complete_images"
     manual_review_folder = ".\\manual_review_images"
     # Move files based on keywords
-    move_files(input_folder, output_folder, manual_review_folder, image_folder)
+    # move_files(input_folder, output_folder, manual_review_folder, image_folder)
+    read_text_file_and_rename_image(input_folder)
