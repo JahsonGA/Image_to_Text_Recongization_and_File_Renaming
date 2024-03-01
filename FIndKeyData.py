@@ -3,9 +3,14 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk import punkt
+from nltk import sent_tokenize, FreqDist
 from collections import Counter
 import shutil as sh
 import re
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 # Function to extract keywords from text
 def extract_keywords(text, n=5):
@@ -32,16 +37,107 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
                     sh.move(os.path.join(image_folder, filename), new_filepath)
                 else:
                     sh.move(os.path.join(image_folder, filename.replace(".txt",".tif")), manual_review_folder)
-                    
-#TODO
-#os move function isn't working properly. 
-#renames the text files and not the image file
-#renaming the file attaches all keywords to the file
-#   algorithm need to learn what keywords are more valuable then others. 
 
 #*Compared to online summarizer
 
+#?Which would be better extraction or abstractive text summarization 
 
+def Esummarize_text(text):
+    #create work frequice table
+    stopWords = set(stopwords.words("english"))
+    words = word_tokenize(text)
+    ps = PorterStemmer()
+
+    freqTable = dict()
+    for word in words:
+        word = ps.stem(word)
+        if word in stopWords:
+            continue
+        if word in freqTable:
+            freqTable[word] += 1
+        else:
+            freqTable[word] = 1
+    
+    #breaks passage into sentence
+    sentences = sent_tokenize(text)                 
+    sentenceValue = dict()                     
+
+    #for every word in a sentence track it's frequency
+    #[:10] grabs the first 10 words. this will save memory on longer passages
+    for sentence in sentences:
+        word_count_in_sentence = (len(word_tokenize(sentence)))
+        for wordValue in freqTable:
+            if wordValue in sentence.lower():
+                if sentence[:30] in sentenceValue:
+                    sentenceValue[sentence[:30]] += freqTable[wordValue]
+                else:
+                    sentenceValue[sentence[:30]] = freqTable[wordValue]
+
+        sentenceValue[sentence[:30]] = sentenceValue[sentence[:30]] // word_count_in_sentence                   
+
+    #find the average frequency of all words in the text to find sumary
+    #* might be better to use abstractive text summarization
+    sumValues = 0
+    for entry in sentenceValue:
+        sumValues += sentenceValue[entry]
+
+    # Average value of a sentence from original text
+    if len(sentenceValue) != 0:
+        average = int(sumValues / len(sentenceValue))
+    else:
+        average = 0
+    
+    sentence_count = 0
+    summary = ''
+
+    #choose the top 3 sentences based on their frequency
+    for sentence in sorted(sentenceValue, key=sentenceValue.get, reverse=True):
+        if sentence[:30] in sentenceValue and sentenceValue[sentence[:30]] > (1.2 * average) and sentence_count < 3:
+            summary += " " + sentence
+            sentence_count += 1
+
+    
+    return summary
+
+#TODO update funciton to be come a Linear Regression model
+def Asummarize_text(text):
+    # Tokenize the text into sentences
+    sentences = sent_tokenize(text)
+
+    # Check if the text contains enough non-stop words for summarization
+    non_stop_words_exist = any(word not in stopwords.words('english') for word in word_tokenize(text))
+
+    if not non_stop_words_exist:
+        return "Text does not contain enough meaningful content for summarization."
+    
+    # Create a TF-IDF vectorizer
+    #Term Frequency-Inverse document Frequency
+    vectorizer = TfidfVectorizer(stop_words='english')
+
+    # Calculate the TF-IDF matrix
+    tfidf_matrix = vectorizer.fit_transform(sentences)
+
+    # Calculate the pairwise cosine similarity
+    cosine_similarities = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
+    # Initialize sentence scores
+    sentence_scores = np.zeros(len(sentences))
+
+    # Calculate the score for each sentence by summing cosine similarities
+    for i in range(len(sentences)):
+        for j in range(len(sentences)):
+            if i != j:
+                sentence_scores[i] += cosine_similarities[i][j]
+
+    # Get the indices of the top sentences based on scores
+    top_sentence_indices = np.argsort(sentence_scores)[::-1][:3]
+
+    # Create the summary by combining top sentences
+    summary = ' '.join([sentences[idx] for idx in sorted(top_sentence_indices)])
+
+    return summary
+
+#* Naming system should follow date, publisher. the key summary will be done the file renaming
 def extract_summary_from_text(text):
     summary = {}
 
@@ -53,30 +149,16 @@ def extract_summary_from_text(text):
     # Extract publisher using regex
     news_match = re.search(r'(?:news|newspaper|paper|press|journal)\s+(?:\w+\s+)*', text, re.IGNORECASE)
     if news_match:
-        summary['publisher'] = news_match.group()
-        
-    #TODO Naming system should follow publisher, date, and keywork summary
-    #* keyword summary can be done with the function to find the summary and then the nltk to find the keywords of the summary. 
-    #*  The threshold should be at most 5 words. 
-
-    '''# Extract subjects or topics using regex
-    subjects_match = re.search(r'Subjects?:\s*(.+)', text)
-    if subjects_match:
-        summary['subjects'] = subjects_match.group(1).split(',')
-
-    # Extract locations using regex
-    locations_match = re.search(r'[A-Z][a-zA-Z]+', text)
-    if locations_match:
-        summary['locations'] = locations_match.group(1).split(',')'''
+        summary['publisher'] = news_match.group()    
 
     return summary
 
 def read_text_file_and_rename_image(text_file_path):
     # Read text from the text file line by line
-    #! There was an error where it would read the whole text file as one string without \n characters.
-    #!   This caused the problem of the regex being able to match more than it should have.
+    # There was an error where it would read the whole text file as one string without \n characters.
+    #   This caused the problem of the regex being able to match more than it should have.
     with open(text_file_path, 'r') as text_file:
-        summary = {}
+        summary = {}       
         for line in text_file:
             line_summary = extract_summary_from_text(line)
             summary.update(line_summary)
@@ -97,6 +179,20 @@ def read_text_file_and_rename_image(text_file_path):
         new_file_name += "_".join(summary['subjects']) + "_"
     if 'locations' in summary:
         new_file_name += "_".join(summary['locations'])'''
+        
+        
+    with open(text_file_path, 'r') as text_file:
+        text = text_file.read()
+    
+    #* keyword summary can be done with the function to find the summary and then the nltk to find the keywords of the summary. 
+    #*  The threshold should be at most 5 words. 
+    
+    print("START\n")
+    print("Summarized using extract: \n",Esummarize_text(text))
+    print("Summarized using abtract: \n",Asummarize_text(text))   
+    print("Extracted words from esum: \n",extract_keywords(Esummarize_text(text)))
+    print("Extracted words from aesum: \n",extract_keywords(Asummarize_text(text)))
+    print("END\n\n")
         
     print(new_file_name)
 

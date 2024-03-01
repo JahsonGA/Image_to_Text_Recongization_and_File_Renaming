@@ -1,4 +1,3 @@
-from PIL import Image
 import pytesseract
 import numpy as np
 import cv2
@@ -122,7 +121,7 @@ def preprocess_for_ocr(image_path):
     else:
         final_image = inverted_binary_image
     
-    # Rotates the whole image clockwise by 90 degrees. 
+    #! Rotates the whole image clockwise by 90 degrees instead of regions of an image. 
     '''# Used to rotate part of an image. these regions are correct to increase text recondition. 
     # Find contours and bounding boxes of text regions
     contours, _ = cv2.findContours(final_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
