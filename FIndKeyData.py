@@ -2,6 +2,7 @@ import os
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
+from nltk.stem import WordNetLemmatizer
 from nltk import punkt
 from nltk import sent_tokenize, FreqDist
 from collections import Counter
@@ -13,14 +14,29 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
 # Function to extract keywords from text
-def extract_keywords(text, n=5):
+# n is the number of keywords should be taken from passage
+def extract_keywords(text, n=10):
     words = word_tokenize(text.lower())
     stop_words = set(stopwords.words('english'))
     words = [word for word in words if word.isalnum() and word not in stop_words]
+    
+    #Stemmer removes prefix/suffix from words. Lemmatization looks for the meaning of words and chance it to its simplest form.
+    #which would be better for extraction? Lemmatization because it can reduce the noise and variability, making it better for text recognition.
+    
+    #! removes the prefix/suffix from words making them unrecognized. 
+    '''# Create a PorterStemmer object 
     stemmer = PorterStemmer()
     words = [stemmer.stem(word) for word in words]
     word_freq = Counter(words)
+    keywords = [word for word, _ in word_freq.most_common(n)]'''
+    
+    # Create a WordNetLemmatizer object 
+    lemmatizer = WordNetLemmatizer() 
+    words = [lemmatizer.lemmatize(word) for word in words]
+    word_freq = Counter(words)
     keywords = [word for word, _ in word_freq.most_common(n)]
+    
+    
     return keywords
 
 # Function to move files based on keywords
@@ -40,10 +56,12 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
 
 #*Compared to online summarizer
 
-#?Which would be better extraction or abstractive text summarization 
+#Which would be better extraction or abstractive text summarization?
+#Abstract give better results for the first test case
 
+#! Replaced with Abstract text summarization
 def Esummarize_text(text):
-    #create work frequice table
+    #create work frequency table
     stopWords = set(stopwords.words("english"))
     words = word_tokenize(text)
     ps = PorterStemmer()
@@ -99,7 +117,6 @@ def Esummarize_text(text):
     
     return summary
 
-#TODO update funciton to be come a Linear Regression model
 def Asummarize_text(text):
     # Tokenize the text into sentences
     sentences = sent_tokenize(text)
@@ -147,7 +164,7 @@ def extract_summary_from_text(text):
         summary['date'] = date_match.group()
 
     # Extract publisher using regex
-    news_match = re.search(r'(?:news|newspaper|paper|press|journal)\s+(?:\w+\s+)*', text, re.IGNORECASE)
+    news_match = re.search(r'(?:article|news|newspaper|paper|press|journal)\s+(?:\w+\s+)*', text, re.IGNORECASE)
     if news_match:
         summary['publisher'] = news_match.group()    
 
@@ -171,15 +188,7 @@ def read_text_file_and_rename_image(text_file_path):
     #print(new_file_name)    
     
     if 'publisher' in summary:
-        new_file_name += summary['publisher'] + "_"
-        
-    #print(new_file_name)
-    
-    '''if 'subjects' in summary:
-        new_file_name += "_".join(summary['subjects']) + "_"
-    if 'locations' in summary:
-        new_file_name += "_".join(summary['locations'])'''
-        
+        new_file_name += summary['publisher'] + "_"        
         
     with open(text_file_path, 'r') as text_file:
         text = text_file.read()
@@ -189,9 +198,9 @@ def read_text_file_and_rename_image(text_file_path):
     
     print("START\n")
     print("Summarized using extract: \n",Esummarize_text(text))
-    print("Summarized using abtract: \n",Asummarize_text(text))   
+    print("Summarized using abtract: \n",Asummarize_text(text))   #give summarize of text
     print("Extracted words from esum: \n",extract_keywords(Esummarize_text(text)))
-    print("Extracted words from aesum: \n",extract_keywords(Asummarize_text(text)))
+    print("Extracted words from aesum: \n",extract_keywords(Asummarize_text(text))) #gathers 15 keywords
     print("END\n\n")
         
     print(new_file_name)
