@@ -1,4 +1,7 @@
 import os
+import sys
+import stat
+import re
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
@@ -7,8 +10,6 @@ from nltk import punkt
 from nltk import sent_tokenize, FreqDist
 from collections import Counter
 import shutil as sh
-import re
-
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
@@ -157,11 +158,26 @@ def Asummarize_text(text):
 #* Naming system should follow date, publisher. the key summary will be done the file renaming
 def extract_summary_from_text(text):
     summary = {}
+    month_map = {
+        'January': '01',
+        'February': '02',
+        'March': '03',
+        'April': '04',
+        'May': '05',
+        'June': '06',
+        'July': '07',
+        'August': '08',
+        'September': '09',
+        'October': '10',
+        'November': '11',
+        'December': '12'
+    }
 
     # Extract dates using regex
     date_match = re.search(r'(?:(?:January|February|March|April|May|June|July|August|September|October|November|December|\d{1,2})\s+\d{1,2},?\s+\d{4})|(?:\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})', text, re.IGNORECASE)
     if date_match:
         summary['date'] = date_match.group()
+    
 
     # Extract publisher using regex
     news_match = re.search(r'(?:article|news|newspaper|paper|press|journal)\s+(?:\w+\s+)*', text, re.IGNORECASE)
@@ -174,8 +190,9 @@ def read_text_file_and_rename_image(text_file_path):
     # Read text from the text file line by line
     # There was an error where it would read the whole text file as one string without \n characters.
     #   This caused the problem of the regex being able to match more than it should have.
+    # Iterate over all files in the image folder
     with open(text_file_path, 'r') as text_file:
-        summary = {}       
+        summary = {} 
         for line in text_file:
             line_summary = extract_summary_from_text(line)
             summary.update(line_summary)
@@ -188,7 +205,7 @@ def read_text_file_and_rename_image(text_file_path):
     #print(new_file_name)    
     
     if 'publisher' in summary:
-        new_file_name += summary['publisher'] + "_"        
+        new_file_name += summary['publisher'] + "_"
         
     with open(text_file_path, 'r') as text_file:
         text = text_file.read()
@@ -197,9 +214,7 @@ def read_text_file_and_rename_image(text_file_path):
     #*  The threshold should be at most 5 words. 
     
     print("START\n")
-    print("Summarized using extract: \n",Esummarize_text(text))
     print("Summarized using abtract: \n",Asummarize_text(text))   #give summarize of text
-    print("Extracted words from esum: \n",extract_keywords(Esummarize_text(text)))
     print("Extracted words from aesum: \n",extract_keywords(Asummarize_text(text))) #gathers 15 keywords
     print("END\n\n")
         
@@ -212,4 +227,18 @@ if __name__ == "__main__":
     manual_review_folder = ".\\manual_review_images"
     # Move files based on keywords
     # move_files(input_folder, output_folder, manual_review_folder, image_folder)
+    ''' for file_name in os.listdir(input_folder):
+        #! Error in accessing the file even when changing the file permissions
+        #os.chmod(file_name,stat.S_IROTH)   
+        
+        file_path = os.path.join(input_folder, file_name)  # Get the full path to the file
+        
+        print(file_path)
+        if os.access(file_name, os.R_OK):
+            print("File is readable")
+        else:
+            print("File is not readable or doesn't exist")
+            break''' 
     read_text_file_and_rename_image(input_folder)
+        
+#TODO fix error in file permission and change month to number instead of words. 
