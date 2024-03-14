@@ -114,7 +114,6 @@ def Esummarize_text(text):
         if sentence[:30] in sentenceValue and sentenceValue[sentence[:30]] > (1.2 * average) and sentence_count < 3:
             summary += " " + sentence
             sentence_count += 1
-
     
     return summary
 
@@ -175,10 +174,21 @@ def extract_summary_from_text(text):
 
     # Extract dates using regex
     date_match = re.search(r'(?:(?:January|February|March|April|May|June|July|August|September|October|November|December|\d{1,2})\s+\d{1,2},?\s+\d{4})|(?:\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})', text, re.IGNORECASE)
-    if date_match:
-        summary['date'] = date_match.group()
-    
+    if date_match:     
+        date_str = date_match.group()
 
+        # Replace month names with their number form
+        for month_name, month_number in month_map.items():
+            date_str = date_str.replace(month_name, month_number)
+
+        # Extract year, month, and day
+        year, month, day = re.findall(r'\d+', date_str)
+        # Ensure month and day are zero-padded if necessary
+        month = month.zfill(2)
+        day = day.zfill(2)
+        
+        summary['date'] = f"{year}/{month}/{day}"
+        
     # Extract publisher using regex
     news_match = re.search(r'(?:article|news|newspaper|paper|press|journal)\s+(?:\w+\s+)*', text, re.IGNORECASE)
     if news_match:
@@ -191,54 +201,52 @@ def read_text_file_and_rename_image(text_file_path):
     # There was an error where it would read the whole text file as one string without \n characters.
     #   This caused the problem of the regex being able to match more than it should have.
     # Iterate over all files in the image folder
-    with open(text_file_path, 'r') as text_file:
-        summary = {} 
-        for line in text_file:
-            line_summary = extract_summary_from_text(line)
-            summary.update(line_summary)
+    
+    # when given a path to a folder, iterate through the contents if it is a text file. 
+    for file_name in os.listdir(text_file_path):
+        if file_name.endswith(".txt"):  # Check if the file is a text file
+            file_path = os.path.join(text_file_path, file_name)
+    
+            with open(file_path, 'r') as text_file:
+                summary = {} 
+                for line in text_file:
+                    line_summary = extract_summary_from_text(line)
+                    summary.update(line_summary)
 
-    # Construct a new file name based on the summary
-    new_file_name = ""
-    if 'date' in summary:
-        new_file_name += summary['date'] + "_"
-    
-    #print(new_file_name)    
-    
-    if 'publisher' in summary:
-        new_file_name += summary['publisher'] + "_"
-        
-    with open(text_file_path, 'r') as text_file:
-        text = text_file.read()
-    
-    #* keyword summary can be done with the function to find the summary and then the nltk to find the keywords of the summary. 
-    #*  The threshold should be at most 5 words. 
-    
-    print("START\n")
-    print("Summarized using abtract: \n",Asummarize_text(text))   #give summarize of text
-    print("Extracted words from aesum: \n",extract_keywords(Asummarize_text(text))) #gathers 15 keywords
-    print("END\n\n")
-        
-    print(new_file_name)
+                #sends summary to the Asummarize_text() and extract_keywords()
+                #text = text_file.read()
+
+            # Construct a new file name based on the summary
+            new_file_name = ""
+            if 'date' in summary:
+                new_file_name += summary['date'] + "_"
+            
+            #print(new_file_name)    
+            
+            if 'publisher' in summary:
+                new_file_name += summary['publisher'] + "_"
+                
+            
+            #* keyword summary can be done with the function to find the summary and then the nltk to find the keywords of the summary. 
+            #*  The threshold should be at most 5 words. 
+            
+            #TODO Summary needs to be shorted again and then added to the new_file_name
+            
+            with open(file_path, "r") as summary:
+                text = summary.read()
+            
+            print("START\n")
+            print("Summarized using abtract: \n",Asummarize_text(text))   #give summarize of text
+            print("Extracted words from aesum: \n",extract_keywords(Asummarize_text(text))) #gathers 15 keywords
+            print("END\n",new_file_name,"\n\n")
 
 if __name__ == "__main__":
-    input_folder = ".\\unnamed_file\\Textfiles\\20231207095006269.txt"
+    input_folder = ".\\unnamed_file\\Textfiles"
     image_folder = ".\\unnamed_file"
     output_folder = ".\\complete_images"
     manual_review_folder = ".\\manual_review_images"
     # Move files based on keywords
     # move_files(input_folder, output_folder, manual_review_folder, image_folder)
-    ''' for file_name in os.listdir(input_folder):
-        #! Error in accessing the file even when changing the file permissions
-        #os.chmod(file_name,stat.S_IROTH)   
-        
-        file_path = os.path.join(input_folder, file_name)  # Get the full path to the file
-        
-        print(file_path)
-        if os.access(file_name, os.R_OK):
-            print("File is readable")
-        else:
-            print("File is not readable or doesn't exist")
-            break''' 
     read_text_file_and_rename_image(input_folder)
-        
-#TODO fix error in file permission and change month to number instead of words. 
+    
+    #TODO Set up file movement by returning file name to move_file()
