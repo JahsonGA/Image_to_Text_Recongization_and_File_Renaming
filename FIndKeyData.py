@@ -42,19 +42,26 @@ def extract_keywords(text, n=10):
 
 # Function to move files based on keywords
 def move_files(input_folder, output_folder, manual_review_folder, image_folder):
-    for filename in os.listdir(input_folder):
-        if filename.endswith(".txt"):
-            with open(os.path.join(input_folder, filename), 'r') as txt_file:
-                content = txt_file.read()
-                keywords = extract_keywords(content)
-                if len(keywords) >= 3:  # Set the threshold for minimum keywords required
-                    new_filename = "_".join(keywords) + ".tif"
-                    new_filepath = os.path.join(output_folder, new_filename)
-                    os.rename(os.path.join(image_folder, filename.replace(".txt",".tif")), os.path.join(output_folder, new_filename))
-                    sh.move(os.path.join(image_folder, filename), new_filepath)
-                else:
-                    sh.move(os.path.join(image_folder, filename.replace(".txt",".tif")), manual_review_folder)
-
+    new_filename, txt_file, text = read_text_file_and_rename_image(input_folder)
+    if  new_filename != '':  # if the newfile name doesn't exist then more the file into the manual review folder
+        new_filename += new_filename + ".tif"
+        new_filepath = os.path.normpath(os.path.join(output_folder, new_filename))
+        sh.move(os.path.normpath(os.path.join(image_folder, txt_file)), new_filepath)
+    else:
+        sh.move(os.path.normpath(os.path.join(image_folder, txt_file)), manual_review_folder)
+#TODO TypeError in sh.move statements
+''' for filename in os.listdir(input_folder):
+    if filename.endswith(".txt"):
+        with open(os.path.join(input_folder, filename), 'r') as txt_file:
+            content = txt_file.read()
+            keywords = extract_keywords(content)
+            if len(keywords) >= 3:  # Set the threshold for minimum keywords required
+                new_filename = "_".join(keywords) + ".tif"
+                new_filepath = os.path.join(output_folder, new_filename)
+                os.rename(os.path.join(image_folder, filename.replace(".txt",".tif")), os.path.join(output_folder, new_filename))
+                sh.move(os.path.join(image_folder, filename), new_filepath)
+            else:
+                sh.move(os.path.join(image_folder, filename.replace(".txt",".tif")), manual_review_folder)'''
 #*Compared to online summarizer
 
 #Which would be better extraction or abstractive text summarization?
@@ -197,6 +204,7 @@ def extract_summary_from_text(text):
     return summary
 
 def read_text_file_and_rename_image(text_file_path):
+    # returns new_filename, txt_file at the iteration, and text summary. 
     # Read text from the text file line by line
     # There was an error where it would read the whole text file as one string without \n characters.
     #   This caused the problem of the regex being able to match more than it should have.
@@ -215,17 +223,24 @@ def read_text_file_and_rename_image(text_file_path):
 
                 #sends summary to the Asummarize_text() and extract_keywords()
                 #text = text_file.read()
+                
+            print("START\n")
 
             # Construct a new file name based on the summary
             new_file_name = ""
             if 'date' in summary:
                 new_file_name += summary['date'] + "_"
+            else:
+                new_file_name = ''
+                print("No date found for file name")
             
             #print(new_file_name)    
             
             if 'publisher' in summary:
                 new_file_name += summary['publisher'] + "_"
-                
+            else:
+                new_file_name = ''
+                print("No publisher found for file name")                
             
             #* keyword summary can be done with the function to find the summary and then the nltk to find the keywords of the summary. 
             #*  The threshold should be at most 5 words. 
@@ -235,10 +250,12 @@ def read_text_file_and_rename_image(text_file_path):
             with open(file_path, "r") as summary:
                 text = summary.read()
             
-            print("START\n")
             print("Summarized using abtract: \n",Asummarize_text(text))   #give summarize of text
             print("Extracted words from aesum: \n",extract_keywords(Asummarize_text(text))) #gathers 15 keywords
             print("END\n",new_file_name,"\n\n")
+            
+            return new_file_name, text_file, text # Return the new file, text_file location, and text gathered. 
+    return "", "", ""  # Return empty strings if no text files were found
 
 if __name__ == "__main__":
     input_folder = ".\\unnamed_file\\Textfiles"
@@ -246,7 +263,7 @@ if __name__ == "__main__":
     output_folder = ".\\complete_images"
     manual_review_folder = ".\\manual_review_images"
     # Move files based on keywords
-    # move_files(input_folder, output_folder, manual_review_folder, image_folder)
-    read_text_file_and_rename_image(input_folder)
+    move_files(input_folder, output_folder, manual_review_folder, image_folder)
+    #read_text_file_and_rename_image(input_folder)
     
     #TODO Set up file movement by returning file name to move_file()
