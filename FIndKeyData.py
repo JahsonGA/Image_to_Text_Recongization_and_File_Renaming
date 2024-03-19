@@ -1,13 +1,10 @@
 import os
-import sys
-import stat
 import re
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer
-from nltk import punkt
-from nltk import sent_tokenize, FreqDist
+from nltk import sent_tokenize
 from collections import Counter
 import shutil as sh
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -43,25 +40,17 @@ def extract_keywords(text, n=10):
 # Function to move files based on keywords
 def move_files(input_folder, output_folder, manual_review_folder, image_folder):
     new_filename, txt_file, text = read_text_file_and_rename_image(input_folder)
-    if  new_filename != '':  # if the newfile name doesn't exist then more the file into the manual review folder
-        new_filename += new_filename + ".tif"
-        new_filepath = os.path.normpath(os.path.join(output_folder, new_filename))
-        sh.move(os.path.normpath(os.path.join(image_folder, txt_file)), new_filepath)
-    else:
-        sh.move(os.path.normpath(os.path.join(image_folder, txt_file)), manual_review_folder)
-#TODO TypeError in sh.move statements
-''' for filename in os.listdir(input_folder):
-    if filename.endswith(".txt"):
-        with open(os.path.join(input_folder, filename), 'r') as txt_file:
-            content = txt_file.read()
-            keywords = extract_keywords(content)
-            if len(keywords) >= 3:  # Set the threshold for minimum keywords required
-                new_filename = "_".join(keywords) + ".tif"
-                new_filepath = os.path.join(output_folder, new_filename)
-                os.rename(os.path.join(image_folder, filename.replace(".txt",".tif")), os.path.join(output_folder, new_filename))
-                sh.move(os.path.join(image_folder, filename), new_filepath)
-            else:
-                sh.move(os.path.join(image_folder, filename.replace(".txt",".tif")), manual_review_folder)'''
+    print("New filename: ", new_filename, "\ntxt_file: ", txt_file, "\ntext: ", text)
+    
+    for image_name in os.listdir(image_folder):
+        if  new_filename != '':  # if the newfile name doesn't exist then more the file into the manual review folder
+            new_filename += new_filename + ".tif"
+            new_filepath = os.path.normpath(os.path.join(output_folder, new_filename))
+            sh.move(os.path.normpath(os.path.join(image_folder, image_name)), new_filepath)
+        else:
+            sh.move(os.path.normpath(os.path.join(image_folder, image_name)), manual_review_folder)
+        
+        
 #*Compared to online summarizer
 
 #Which would be better extraction or abstractive text summarization?
@@ -197,11 +186,12 @@ def extract_summary_from_text(text):
         summary['date'] = f"{year}/{month}/{day}"
         
     # Extract publisher using regex
-    news_match = re.search(r'(?:article|news|newspaper|paper|press|journal)\s+(?:\w+\s+)*', text, re.IGNORECASE)
+    news_match = re.search(r'(?:article|\w*news|newspaper|paper|press|journal)\s+(?:\w+\s+)*', text, re.IGNORECASE)
     if news_match:
-        summary['publisher'] = news_match.group()    
+        summary['publisher'] = news_match.group()
 
     return summary
+    #TODO Cannot see what is in summary. is that because there nothing there or that only a single line or word is ever sent at a time so it cannot match anything 
 
 def read_text_file_and_rename_image(text_file_path):
     # returns new_filename, txt_file at the iteration, and text summary. 
@@ -213,16 +203,20 @@ def read_text_file_and_rename_image(text_file_path):
     # when given a path to a folder, iterate through the contents if it is a text file. 
     for file_name in os.listdir(text_file_path):
         if file_name.endswith(".txt"):  # Check if the file is a text file
-            file_path = os.path.join(text_file_path, file_name)
+            file_path = os.path.join(text_file_path, file_name) # Creates file path to txt
     
             with open(file_path, 'r') as text_file:
                 summary = {} 
+                strTextFile = text_file.read()
                 for line in text_file:
                     line_summary = extract_summary_from_text(line)
-                    summary.update(line_summary)
-
+                    summary.update(line_summary)    
+                    
+                    
                 #sends summary to the Asummarize_text() and extract_keywords()
                 #text = text_file.read()
+            
+            text_file.close()
                 
             print("START\n")
 
@@ -232,9 +226,7 @@ def read_text_file_and_rename_image(text_file_path):
                 new_file_name += summary['date'] + "_"
             else:
                 new_file_name = ''
-                print("No date found for file name")
-            
-            #print(new_file_name)    
+                print("No date found for file name")   
             
             if 'publisher' in summary:
                 new_file_name += summary['publisher'] + "_"
@@ -249,12 +241,13 @@ def read_text_file_and_rename_image(text_file_path):
             
             with open(file_path, "r") as summary:
                 text = summary.read()
+            summary.close()
             
             print("Summarized using abtract: \n",Asummarize_text(text))   #give summarize of text
             print("Extracted words from aesum: \n",extract_keywords(Asummarize_text(text))) #gathers 15 keywords
             print("END\n",new_file_name,"\n\n")
             
-            return new_file_name, text_file, text # Return the new file, text_file location, and text gathered. 
+            return new_file_name, strTextFile, text # Return the new file, text_file location, and text gathered. 
     return "", "", ""  # Return empty strings if no text files were found
 
 if __name__ == "__main__":
@@ -263,7 +256,7 @@ if __name__ == "__main__":
     output_folder = ".\\complete_images"
     manual_review_folder = ".\\manual_review_images"
     # Move files based on keywords
-    move_files(input_folder, output_folder, manual_review_folder, image_folder)
-    #read_text_file_and_rename_image(input_folder)
+    #move_files(input_folder, output_folder, manual_review_folder, image_folder)
+    read_text_file_and_rename_image(input_folder)
     
-    #TODO Set up file movement by returning file name to move_file()
+    #TODO Issue with using the data found in the regex
