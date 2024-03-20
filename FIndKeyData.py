@@ -42,6 +42,8 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
     new_filename, txt_file, text = read_text_file_and_rename_image(input_folder)
     print("New filename: ", new_filename, "\ntxt_file: ", txt_file, "\ntext: ", text)
     
+    
+    
     for image_name in os.listdir(image_folder):
         if  new_filename != '':  # if the newfile name doesn't exist then more the file into the manual review folder
             new_filename += new_filename + ".tif"
@@ -169,7 +171,7 @@ def extract_summary_from_text(text):
     }
 
     # Extract dates using regex
-    date_match = re.search(r'(?:(?:January|February|March|April|May|June|July|August|September|October|November|December|\d{1,2})\s+\d{1,2},?\s+\d{4})|(?:\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})', text, re.IGNORECASE)
+    date_match = re.search(r'(?:(?:January|February|March|April|May|June|July|August|September|October|November|December|\d{1,2})\s+\d{1,2},?\s+\d{4})|(?:\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})', str(text), re.IGNORECASE)
     if date_match:     
         date_str = date_match.group()
 
@@ -186,12 +188,11 @@ def extract_summary_from_text(text):
         summary['date'] = f"{year}/{month}/{day}"
         
     # Extract publisher using regex
-    news_match = re.search(r'(?:article|\w*news|newspaper|paper|press|journal)\s+(?:\w+\s+)*', text, re.IGNORECASE)
+    news_match = re.search(r'(?:article|news|newspaper|paper|press|journal)\s+(?:\w+\s+)*(?:times|post|today|day|tribune|globe|news|newspaper|paper|press|journal)', str(text), re.IGNORECASE)
     if news_match:
         summary['publisher'] = news_match.group()
 
     return summary
-    #TODO Cannot see what is in summary. is that because there nothing there or that only a single line or word is ever sent at a time so it cannot match anything 
 
 def read_text_file_and_rename_image(text_file_path):
     # returns new_filename, txt_file at the iteration, and text summary. 
@@ -204,48 +205,63 @@ def read_text_file_and_rename_image(text_file_path):
     for file_name in os.listdir(text_file_path):
         if file_name.endswith(".txt"):  # Check if the file is a text file
             file_path = os.path.join(text_file_path, file_name) # Creates file path to txt
-    
+            new_file_name = ""
+            
             with open(file_path, 'r') as text_file:
                 summary = {} 
                 strTextFile = text_file.read()
-                for line in text_file:
-                    line_summary = extract_summary_from_text(line)
-                    summary.update(line_summary)    
+                for line in strTextFile:
+                    summary = extract_summary_from_text(strTextFile)
                     
-                    
-                #sends summary to the Asummarize_text() and extract_keywords()
-                #text = text_file.read()
+                    # Construct a new file name based on the summary
+                    if 'date' in summary:
+                        new_file_name += summary['date'] + "_"
+                        
+                        if 'publisher' in summary:
+                            new_file_name += summary['publisher'] + "_"
+                            break
+                        else:
+                            print("No publisher found for file name in line:\n\t", line)
+                            continue
+                        
+                    else:
+                        print("No date found for file name in line:\n\t", line)
+                        continue
             
             text_file.close()
                 
-            print("START\n")
-
-            # Construct a new file name based on the summary
-            new_file_name = ""
-            if 'date' in summary:
-                new_file_name += summary['date'] + "_"
-            else:
-                new_file_name = ''
-                print("No date found for file name")   
-            
-            if 'publisher' in summary:
-                new_file_name += summary['publisher'] + "_"
-            else:
-                new_file_name = ''
-                print("No publisher found for file name")                
+            print("START\n")              
             
             #* keyword summary can be done with the function to find the summary and then the nltk to find the keywords of the summary. 
             #*  The threshold should be at most 5 words. 
-            
-            #TODO Summary needs to be shorted again and then added to the new_file_name
             
             with open(file_path, "r") as summary:
                 text = summary.read()
             summary.close()
             
-            print("Summarized using abtract: \n",Asummarize_text(text))   #give summarize of text
-            print("Extracted words from aesum: \n",extract_keywords(Asummarize_text(text))) #gathers 15 keywords
-            print("END\n",new_file_name,"\n\n")
+            aText = Asummarize_text(text)
+            extr_aText = extract_keywords(Asummarize_text(text))
+            extr_eText_aText = extract_keywords(Esummarize_text(Asummarize_text(text)))
+            
+            print("Summarized using abtract: \n",aText)   #give summarize of text
+            print("Extracted words from asum: \n",extr_aText) #gathers 15 keywords
+            print("Extracted words from esum of asum: \n",extr_eText_aText) #gathers 5 keywords
+            
+            if (len(extr_aText) >= len(extr_eText_aText)):
+                for i in extr_aText:
+                    new_file_name += i + "-"
+            
+            elif (len(extr_aText) < len(extr_eText_aText)):
+                for i in extr_eText_aText:
+                    new_file_name += i + "-"
+                    
+            if new_file_name == "":
+                new_file_name = ''      #if the new file name is empty then set it to empty
+            else:
+                new_file_name = new_file_name.rstrip(new_file_name[-1])
+                new_file_name += "_"    #otherwise end the file name with a "_"
+            
+            print("\nNew File name: ",new_file_name,"\nEND")
             
             return new_file_name, strTextFile, text # Return the new file, text_file location, and text gathered. 
     return "", "", ""  # Return empty strings if no text files were found
@@ -256,7 +272,7 @@ if __name__ == "__main__":
     output_folder = ".\\complete_images"
     manual_review_folder = ".\\manual_review_images"
     # Move files based on keywords
-    #move_files(input_folder, output_folder, manual_review_folder, image_folder)
-    read_text_file_and_rename_image(input_folder)
+    move_files(input_folder, output_folder, manual_review_folder, image_folder)
+    #read_text_file_and_rename_image(input_folder)
     
-    #TODO Issue with using the data found in the regex
+    #TODO correct move_file() to work with new file name
