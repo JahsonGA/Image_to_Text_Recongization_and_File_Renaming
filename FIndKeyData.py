@@ -51,15 +51,16 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
     #manual_review_folder = cwd + manual_review_folder
     
     for image_name in os.listdir(image_folder):
-        if  new_filename != '':  # if the newfile name doesn't exist then more the file into the manual review folder
-            new_filename += new_filename + ".tif"
-            new_filepath = os.path.normpath(os.path.join(output_folder, new_filename))
-            #sh.move(os.path.normpath(os.path.join(image_folder, image_name)), new_filepath)
-            sh.move(os.path.normpath(os.path.join(input_folder,image_name)), os.path.normpath(os.path.join(image_folder,new_filepath)))
-        else:
-            #sh.move(os.path.normpath(os.path.join(image_folder, image_name)), manual_review_folder)
-            sh.move(os.path.normpath(os.path.join(input_folder,image_name)), os.path.normpath(os.path.join(manual_review_folder,image_name)))
-        
+        if image_name.endswith(".tif"):
+            
+            if  new_filename != '':  # if the newfile name doesn't exist then more the file into the manual review folder
+                new_filename = new_filename + ".tif"
+                new_filepath = os.path.normpath(os.path.join(output_folder, new_filename))
+                #sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(new_filepath))
+                print("Dst: ", os.path.normpath(new_filepath), "Scr: ", os.path.normpath(os.path.join(image_folder,image_name)))
+            else:
+                #sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(os.path.join(manual_review_folder,image_name)))
+                print("Manual")
         
 #*Compared to online summarizer
 
