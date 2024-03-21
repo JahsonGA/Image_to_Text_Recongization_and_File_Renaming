@@ -42,15 +42,23 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
     new_filename, txt_file, text = read_text_file_and_rename_image(input_folder)
     print("New filename: ", new_filename, "\ntxt_file: ", txt_file, "\ntext: ", text)
     
-    
+    #failed attempt to get move function to work correctly
+    #cwd = os.getcwd()  # Get the current working directory (cwd)
+    #files = os.listdir(cwd)  # Get all the files in that directory
+    #print("Files in %r: %s" % (cwd, files))
+    #input_folder = cwd + input_folder
+    #output_folder = cwd + output_folder
+    #manual_review_folder = cwd + manual_review_folder
     
     for image_name in os.listdir(image_folder):
         if  new_filename != '':  # if the newfile name doesn't exist then more the file into the manual review folder
             new_filename += new_filename + ".tif"
             new_filepath = os.path.normpath(os.path.join(output_folder, new_filename))
-            sh.move(os.path.normpath(os.path.join(image_folder, image_name)), new_filepath)
+            #sh.move(os.path.normpath(os.path.join(image_folder, image_name)), new_filepath)
+            sh.move(os.path.normpath(os.path.join(input_folder,image_name)), os.path.normpath(os.path.join(image_folder,new_filepath)))
         else:
-            sh.move(os.path.normpath(os.path.join(image_folder, image_name)), manual_review_folder)
+            #sh.move(os.path.normpath(os.path.join(image_folder, image_name)), manual_review_folder)
+            sh.move(os.path.normpath(os.path.join(input_folder,image_name)), os.path.normpath(os.path.join(manual_review_folder,image_name)))
         
         
 #*Compared to online summarizer
@@ -185,7 +193,7 @@ def extract_summary_from_text(text):
         month = month.zfill(2)
         day = day.zfill(2)
         
-        summary['date'] = f"{year}/{month}/{day}"
+        summary['date'] = f"{year}-{month}-{day}"
         
     # Extract publisher using regex
     news_match = re.search(r'(?:article|news|newspaper|paper|press|journal)\s+(?:\w+\s+)*(?:times|post|today|day|tribune|globe|news|newspaper|paper|press|journal)', str(text), re.IGNORECASE)
@@ -227,6 +235,8 @@ def read_text_file_and_rename_image(text_file_path):
                     else:
                         print("No date found for file name in line:\n\t", line)
                         continue
+                    
+                text_file.close()
             
             text_file.close()
                 
@@ -237,6 +247,7 @@ def read_text_file_and_rename_image(text_file_path):
             
             with open(file_path, "r") as summary:
                 text = summary.read()
+                summary.close()
             summary.close()
             
             aText = Asummarize_text(text)
@@ -259,7 +270,7 @@ def read_text_file_and_rename_image(text_file_path):
                 new_file_name = ''      #if the new file name is empty then set it to empty
             else:
                 new_file_name = new_file_name.rstrip(new_file_name[-1])
-                new_file_name += "_"    #otherwise end the file name with a "_"
+                #new_file_name += "_"    #otherwise end the file name with a "_"
             
             print("\nNew File name: ",new_file_name,"\nEND")
             
