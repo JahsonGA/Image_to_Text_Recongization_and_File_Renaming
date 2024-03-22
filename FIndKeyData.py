@@ -295,4 +295,4 @@ if __name__ == "__main__":
     move_files(input_folder, output_folder, manual_review_folder, image_folder)
     #read_text_file_and_rename_image(input_folder)
     
-    #TODO correct move_file() to work with new file name
+    #TODO correct move_file() to work with new file name  
