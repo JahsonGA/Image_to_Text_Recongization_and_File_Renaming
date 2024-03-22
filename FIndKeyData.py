@@ -34,14 +34,10 @@ def extract_keywords(text, n=10):
     word_freq = Counter(words)
     keywords = [word for word, _ in word_freq.most_common(n)]
     
-    
     return keywords
 
 # Function to move files based on keywords
 def move_files(input_folder, output_folder, manual_review_folder, image_folder):
-    new_filename, txt_file, text = read_text_file_and_rename_image(input_folder)
-    print("New filename: ", new_filename, "\ntxt_file: ", txt_file, "\ntext: ", text)
-    
     #failed attempt to get move function to work correctly
     #cwd = os.getcwd()  # Get the current working directory (cwd)
     #files = os.listdir(cwd)  # Get all the files in that directory
@@ -50,7 +46,14 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
     #output_folder = cwd + output_folder
     #manual_review_folder = cwd + manual_review_folder
     
+    count = 0
     for image_name in os.listdir(image_folder):
+        # Sends the text files to be read and stores the new filename, txt_file location, and text summary
+        file_package = read_text_file_and_rename_image(input_folder)
+        #TODO correct the file unpacking
+        package_values = file_package.values()
+        print("Iteration: ", count, "\nLocation: ", list(package_values[0][1]), "\nNew filename: ", list(package_values[0][0]), "\nText: ", list(package_values[0][2]))
+    
         if image_name.endswith(".tif"):
             
             if  new_filename != '':  # if the newfile name doesn't exist then more the file into the manual review folder
@@ -61,6 +64,7 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
             else:
                 #sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(os.path.join(manual_review_folder,image_name)))
                 print("Manual")
+        count += 1
         
 #*Compared to online summarizer
 
@@ -211,6 +215,7 @@ def read_text_file_and_rename_image(text_file_path):
     # Iterate over all files in the image folder
     
     # when given a path to a folder, iterate through the contents if it is a text file. 
+    completedArry = {}
     for file_name in os.listdir(text_file_path):
         if file_name.endswith(".txt"):  # Check if the file is a text file
             file_path = os.path.join(text_file_path, file_name) # Creates file path to txt
@@ -220,7 +225,7 @@ def read_text_file_and_rename_image(text_file_path):
                 summary = {} 
                 strTextFile = text_file.read()
                 for line in strTextFile:
-                    summary = extract_summary_from_text(strTextFile)
+                    summary = extract_summary_from_text(line)
                     
                     # Construct a new file name based on the summary
                     if 'date' in summary:
@@ -230,18 +235,18 @@ def read_text_file_and_rename_image(text_file_path):
                             new_file_name += summary['publisher'] + "_"
                             break
                         else:
-                            print("No publisher found for file name in line:\n\t", line)
+                            #print("No publisher found for file name in line:\n\t", line)
                             continue
                         
                     else:
-                        print("No date found for file name in line:\n\t", line)
+                        #print("No date found for file name in line:\n\t", line)
                         continue
                     
                 text_file.close()
             
             text_file.close()
                 
-            print("START\n")              
+            # print("START\n")              
             
             #* keyword summary can be done with the function to find the summary and then the nltk to find the keywords of the summary. 
             #*  The threshold should be at most 5 words. 
@@ -255,9 +260,9 @@ def read_text_file_and_rename_image(text_file_path):
             extr_aText = extract_keywords(Asummarize_text(text))
             extr_eText_aText = extract_keywords(Esummarize_text(Asummarize_text(text)))
             
-            print("Summarized using abtract: \n",aText)   #give summarize of text
-            print("Extracted words from asum: \n",extr_aText) #gathers 15 keywords
-            print("Extracted words from esum of asum: \n",extr_eText_aText) #gathers 5 keywords
+            # print("Summarized using abtract: \n",aText)   #give summarize of text
+            # print("Extracted words from asum: \n",extr_aText) #gathers 15 keywords
+            # print("Extracted words from esum of asum: \n",extr_eText_aText) #gathers 5 keywords
             
             if (len(extr_aText) >= len(extr_eText_aText)):
                 for i in extr_aText:
@@ -273,9 +278,12 @@ def read_text_file_and_rename_image(text_file_path):
                 new_file_name = new_file_name.rstrip(new_file_name[-1])
                 #new_file_name += "_"    #otherwise end the file name with a "_"
             
-            print("\nNew File name: ",new_file_name,"\nEND")
+            # print("\nNew File name: ",new_file_name,"\nEND")
             
-            return new_file_name, strTextFile, text # Return the new file, text_file location, and text gathered. 
+            completedArry[file_name] = [new_file_name, file_name, text]
+            
+        return completedArry # Return the new file, text_file location, and text gathered. 
+
     return "", "", ""  # Return empty strings if no text files were found
 
 if __name__ == "__main__":
