@@ -11,6 +11,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
+#globals
+completed_files = []
+
 # Function to extract keywords from text
 # n is the number of keywords should be taken from passage
 def extract_keywords(text, n=10):
@@ -49,21 +52,22 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
     count = 0
     for image_name in os.listdir(image_folder):
         # Sends the text files to be read and stores the new filename, txt_file location, and text summary
-        file_package = read_text_file_and_rename_image(input_folder)
-        #TODO correct the file unpacking
-        package_values = file_package.values()
-        print("Iteration: ", count, "\nLocation: ", list(package_values[0][1]), "\nNew filename: ", list(package_values[0][0]), "\nText: ", list(package_values[0][2]))
+        #file_package = read_text_file_and_rename_image(input_folder)
+        #package_values = file_package.values()
+        #print("Iteration: ", count, "\nLocation: ", list(package_values[0][1]), "\nNew filename: ", list(package_values[0][0]), "\nText: ", list(package_values[0][2]))
+    
+        new_filename, txt_file, text = read_text_file_and_rename_image(input_folder)
     
         if image_name.endswith(".tif"):
-            
-            if  new_filename != '':  # if the newfile name doesn't exist then more the file into the manual review folder
+            print("Iteration: ", count+1)
+            if  new_filename != '' and new_filename[0] != '_':  # if the newfile name doesn't exist then more the file into the manual review folder
                 new_filename = new_filename + ".tif"
                 new_filepath = os.path.normpath(os.path.join(output_folder, new_filename))
                 #sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(new_filepath))
-                print("Dst: ", os.path.normpath(new_filepath), "Scr: ", os.path.normpath(os.path.join(image_folder,image_name)))
+                print("Scr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(new_filepath))
             else:
                 #sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(os.path.join(manual_review_folder,image_name)))
-                print("Manual")
+                print("Manual\nScr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(os.path.join(manual_review_folder,image_name)))
         count += 1
         
 #*Compared to online summarizer
@@ -215,19 +219,19 @@ def read_text_file_and_rename_image(text_file_path):
     # Iterate over all files in the image folder
     
     # when given a path to a folder, iterate through the contents if it is a text file. 
-    completedArry = {}
+    #completedArry = []
     for file_name in os.listdir(text_file_path):
-        if file_name.endswith(".txt"):  # Check if the file is a text file
+        if file_name.endswith(".txt") and file_name not in completed_files:  # Check if the file is a text file
             file_path = os.path.join(text_file_path, file_name) # Creates file path to txt
             new_file_name = ""
             
             with open(file_path, 'r') as text_file:
                 summary = {} 
-                strTextFile = text_file.read()
+                strTextFile = text_file.readlines()
                 for line in strTextFile:
-                    summary = extract_summary_from_text(line)
-                    
-                    # Construct a new file name based on the summary
+                    summary.update(extract_summary_from_text(line))
+                        
+            # Construct a new file name based on the summary
                     if 'date' in summary:
                         new_file_name += summary['date'] + "_"
                         
@@ -241,8 +245,6 @@ def read_text_file_and_rename_image(text_file_path):
                     else:
                         #print("No date found for file name in line:\n\t", line)
                         continue
-                    
-                text_file.close()
             
             text_file.close()
                 
@@ -253,24 +255,17 @@ def read_text_file_and_rename_image(text_file_path):
             
             with open(file_path, "r") as summary:
                 text = summary.read()
-                summary.close()
             summary.close()
             
-            aText = Asummarize_text(text)
+            # aText = Asummarize_text(text)
             extr_aText = extract_keywords(Asummarize_text(text))
-            extr_eText_aText = extract_keywords(Esummarize_text(Asummarize_text(text)))
             
             # print("Summarized using abtract: \n",aText)   #give summarize of text
             # print("Extracted words from asum: \n",extr_aText) #gathers 15 keywords
-            # print("Extracted words from esum of asum: \n",extr_eText_aText) #gathers 5 keywords
+            # print("\nNew File name 1: ",new_file_name)
             
-            if (len(extr_aText) >= len(extr_eText_aText)):
-                for i in extr_aText:
-                    new_file_name += i + "-"
-            
-            elif (len(extr_aText) < len(extr_eText_aText)):
-                for i in extr_eText_aText:
-                    new_file_name += i + "-"
+            for i in extr_aText:
+                new_file_name += i + "-"
                     
             if new_file_name == "":
                 new_file_name = ''      #if the new file name is empty then set it to empty
@@ -278,11 +273,21 @@ def read_text_file_and_rename_image(text_file_path):
                 new_file_name = new_file_name.rstrip(new_file_name[-1])
                 #new_file_name += "_"    #otherwise end the file name with a "_"
             
-            # print("\nNew File name: ",new_file_name,"\nEND")
+            # print("\nNew File name 2: ",new_file_name,"\nEND")
             
-            completedArry[file_name] = [new_file_name, file_name, text]
+            #completedArry[file_name] = [new_file_name, file_name, text]
+            completed_files.append(file_name)
             
-        return completedArry # Return the new file, text_file location, and text gathered. 
+            #*mark the file to remove
+            if(not new_file_name[0].isdigit()):
+                new_file_name = new_file_name[:0] + '_' + new_file_name[0:]
+            
+            return new_file_name, strTextFile, text # Return the new file, text_file location, and text gathered. 
+            # What if there is a global variable to count the number of files read in the folder.
+            # It worked
+            #TODO find a way to mark a file as manual review. 
+            
+        #return completedArry # Return the new file, text_file location, and text gathered. 
 
     return "", "", ""  # Return empty strings if no text files were found
 
@@ -293,6 +298,9 @@ if __name__ == "__main__":
     manual_review_folder = ".\\manual_review_images"
     # Move files based on keywords
     move_files(input_folder, output_folder, manual_review_folder, image_folder)
-    #read_text_file_and_rename_image(input_folder)
+    # read_text_file_and_rename_image(input_folder)
+    # read_text_file_and_rename_image(input_folder)
+    # read_text_file_and_rename_image(input_folder)
     
     #TODO correct move_file() to work with new file name  
+    # Solved but now all files go into complete_images. Need to find a way to mark files as manual_review_images
