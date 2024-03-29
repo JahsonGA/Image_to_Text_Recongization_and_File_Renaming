@@ -188,16 +188,25 @@ def extract_summary_from_text(text):
     }
 
     # Extract dates using regex
-    date_match = re.search(r'(?:(?:January|February|March|April|May|June|July|August|September|October|November|December|\d{1,2})\s+\d{1,2},?\s+\d{4})|(?:\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})', str(text), re.IGNORECASE)
+    #TODO adjust date search to find with month day year or month year.
+                                            #vv Month,Day year vv                                                                                                                vv day month year vv day month year                                                                        vv month year vv day month year vv                                                          
+    date_match = re.search(r'(?:(?:January|February|March|April|May|June|July|August|September|October|November|December|\d{1,2})\s+\d{1,2},?\s+\d{4})|(?:\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})|(?:January|February|March|April|May|June|July|August|September|October|November|December),?\s+\d{4}', str(text), re.IGNORECASE)
     if date_match:     
         date_str = date_match.group()
+        #print(date_str)
 
         # Replace month names with their number form
         for month_name, month_number in month_map.items():
             date_str = date_str.replace(month_name, month_number)
+            # print(date_str)
+        # print("Final str: ",date_str)
 
         # Extract year, month, and day
-        year, month, day = re.findall(r'\d+', date_str)
+        date_values = re.findall(r'\d+', date_str)
+        year = date_values[0]
+        month = date_values[1] if len(date_values) > 1 else '00'  # Default to '01' if month is missing
+        day = date_values[2] if len(date_values) > 2 else '00'    # Default to '01' if day is missing
+        
         # Ensure month and day are zero-padded if necessary
         month = month.zfill(2)
         day = day.zfill(2)
@@ -220,6 +229,7 @@ def read_text_file_and_rename_image(text_file_path):
     
     # when given a path to a folder, iterate through the contents if it is a text file. 
     #completedArry = []
+    sentinelDate = False
     for file_name in os.listdir(text_file_path):
         if file_name.endswith(".txt") and file_name not in completed_files:  # Check if the file is a text file
             file_path = os.path.join(text_file_path, file_name) # Creates file path to txt
@@ -232,10 +242,14 @@ def read_text_file_and_rename_image(text_file_path):
                     summary.update(extract_summary_from_text(line))
                         
             # Construct a new file name based on the summary
-                    if 'date' in summary:
+            #   If there is a date in the summary add to the file name
+            #   If there is a publisher in the summary add it file name
+            #   If there is already a date in the file name then skip it
+                    if ('date' in summary and sentinelDate == False):
                         new_file_name += summary['date'] + "_"
+                        sentinelDate = True
                         
-                        if 'publisher' in summary:
+                        if ('publisher' in summary):
                             new_file_name += summary['publisher'] + "_"
                             break
                         else:
@@ -248,7 +262,7 @@ def read_text_file_and_rename_image(text_file_path):
             
             text_file.close()
                 
-            # print("START\n")              
+            print("START\n")              
             
             #* keyword summary can be done with the function to find the summary and then the nltk to find the keywords of the summary. 
             #*  The threshold should be at most 5 words. 
@@ -257,23 +271,24 @@ def read_text_file_and_rename_image(text_file_path):
                 text = summary.read()
             summary.close()
             
-            # aText = Asummarize_text(text)
+            aText = Asummarize_text(text)
             extr_aText = extract_keywords(Asummarize_text(text))
             
-            # print("Summarized using abtract: \n",aText)   #give summarize of text
-            # print("Extracted words from asum: \n",extr_aText) #gathers 15 keywords
-            # print("\nNew File name 1: ",new_file_name)
+            print("Summarized using abtract: \n",aText)   #give summarize of text
+            print("Extracted words from asum: \n",extr_aText) #gathers 15 keywords
+            print("\nNew File name 1: ",new_file_name)
             
             for i in extr_aText:
                 new_file_name += i + "-"
                     
-            if new_file_name == "":
-                new_file_name = ''      #if the new file name is empty then set it to empty
-            else:
+            if new_file_name != "":
                 new_file_name = new_file_name.rstrip(new_file_name[-1])
                 #new_file_name += "_"    #otherwise end the file name with a "_"
+                
+            else:
+                new_file_name = ''      #if the new file name is empty then set it to empty
             
-            # print("\nNew File name 2: ",new_file_name,"\nEND")
+            print("\nNew File name 2: ",new_file_name,"\nEND")
             
             #completedArry[file_name] = [new_file_name, file_name, text]
             completed_files.append(file_name)
