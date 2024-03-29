@@ -59,15 +59,17 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
         new_filename, txt_file, text = read_text_file_and_rename_image(input_folder)
     
         if image_name.endswith(".tif"):
-            print("Iteration: ", count+1)
+            # print("Iteration: ", count+1)
             if  new_filename != '' and new_filename[0] != '_':  # if the newfile name doesn't exist then more the file into the manual review folder
                 new_filename = new_filename + ".tif"
                 new_filepath = os.path.normpath(os.path.join(output_folder, new_filename))
-                #sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(new_filepath))
-                print("Scr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(new_filepath))
+                sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(new_filepath))
+                # print("Scr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(new_filepath))
             else:
-                #sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(os.path.join(manual_review_folder,image_name)))
-                print("Manual\nScr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(os.path.join(manual_review_folder,image_name)))
+                sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(os.path.join(manual_review_folder,image_name)))
+                # print("Manual\nScr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(os.path.join(manual_review_folder,image_name)))
+                
+            #os.remove(os.path.normpath(os.path.join(input_folder, txt_file)))
         count += 1
         
 #*Compared to online summarizer
@@ -262,7 +264,7 @@ def read_text_file_and_rename_image(text_file_path):
             
             text_file.close()
                 
-            print("START\n")              
+            # print("START\n")              
             
             #* keyword summary can be done with the function to find the summary and then the nltk to find the keywords of the summary. 
             #*  The threshold should be at most 5 words. 
@@ -271,12 +273,12 @@ def read_text_file_and_rename_image(text_file_path):
                 text = summary.read()
             summary.close()
             
-            aText = Asummarize_text(text)
+            # aText = Asummarize_text(text)
             extr_aText = extract_keywords(Asummarize_text(text))
             
-            print("Summarized using abtract: \n",aText)   #give summarize of text
-            print("Extracted words from asum: \n",extr_aText) #gathers 15 keywords
-            print("\nNew File name 1: ",new_file_name)
+            # print("Summarized using abtract: \n",aText)   #give summarize of text
+            # print("Extracted words from asum: \n",extr_aText) #gathers 15 keywords
+            # print("\nNew File name 1: ",new_file_name)
             
             for i in extr_aText:
                 new_file_name += i + "-"
@@ -288,7 +290,7 @@ def read_text_file_and_rename_image(text_file_path):
             else:
                 new_file_name = ''      #if the new file name is empty then set it to empty
             
-            print("\nNew File name 2: ",new_file_name,"\nEND")
+            # print("\nNew File name 2: ",new_file_name,"\nEND")
             
             #completedArry[file_name] = [new_file_name, file_name, text]
             completed_files.append(file_name)
@@ -297,7 +299,7 @@ def read_text_file_and_rename_image(text_file_path):
             if(not new_file_name[0].isdigit()):
                 new_file_name = new_file_name[:0] + '_' + new_file_name[0:]
             
-            return new_file_name, strTextFile, text # Return the new file, text_file location, and text gathered. 
+            return new_file_name, file_name, text # Return the new file, text_file location, and text gathered. 
             # What if there is a global variable to count the number of files read in the folder.
             # It worked
             #TODO find a way to mark a file as manual review. 
