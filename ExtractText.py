@@ -146,6 +146,24 @@ def show_detected_text(image_path):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     
+def show_detected_text_from_image(image):
+    # Read the image from preprocessed image
+    # image = preprocessing(image)
+    # Perform text detection using pytesseract
+    boxes = pytesseract.image_to_boxes(image)        
+        
+        # Draw bounding boxes and write text in red
+    for box in boxes.splitlines():
+        box = box.split(' ')
+        x, y, w, h = int(box[1]), int(box[2]), int(box[3]), int(box[4])
+        image = cv2.rectangle(image, (int(box[1]), image.shape[0] - int(box[2])), (int(box[3]), image.shape[0] - int(box[4])), (0, 0, 255), 2) # Red color for bounding box
+        cv2.putText(image, box[0], (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2, cv2.LINE_AA) # Red color for text
+    
+    # Display the image
+    cv2.imshow('Detected Text', cv2.resize(image,(700,800)))
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
 def text_detection(image_path):
     img = preprocessing(image_path)
     rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -264,20 +282,17 @@ def preprocessing(image_path):
     enhanced_image = cv2.equalizeHist(gray_image)
 
     # Calculate white pixel count for binary and inverted binary images
-    _, binary_image = cv2.threshold(enhanced_image, 127, 255, cv2.THRESH_BINARY)
-    _, inverted_binary_image = cv2.threshold(enhanced_image, 127, 255, cv2.THRESH_BINARY_INV)
-    white_pixel_count_binary = cv2.countNonZero(binary_image)
-    white_pixel_count_inverted_binary = cv2.countNonZero(inverted_binary_image)
-
-    # Choose the 'better' image based on white pixel count
-    if white_pixel_count_binary >= white_pixel_count_inverted_binary:
-        final_image = binary_image
-    else:
-        final_image = inverted_binary_image
+    _, binary_image = cv2.threshold(enhanced_image, 127, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C)
+    '''ADAPTIVE_THRESH_GAUSSIAN_C
+    THRESH_BINARY_INV'''
+    
+    # Otsu's thresholding after Gaussian filtering
+    blur = cv2.GaussianBlur(binary_image,(5,5),0)
+    ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     # Convex Hull Mask
-    contours, _ = cv2.findContours(final_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    convex_hull_mask = np.zeros_like(final_image)
+    contours, _ = cv2.findContours(th3, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    convex_hull_mask = np.zeros_like(th3)
     for contour in contours:
         hull = cv2.convexHull(contour)
         cv2.drawContours(convex_hull_mask, [hull], -1, (255), -1)
@@ -287,7 +302,11 @@ def preprocessing(image_path):
     dilated_mask = cv2.dilate(convex_hull_mask, kernel, iterations = 1)
 
     # Bitwise AND with the original image
-    characters_image = cv2.bitwise_and(enhanced_image, enhanced_image, mask=dilated_mask)
+    characters_image = cv2.bitwise_and(binary_image, binary_image, mask=dilated_mask)
+    '''
+    ADAPTIVE_THRESH_GAUSSIAN_C threshold and binary_image mask result in 35/59
+    ADAPTIVE_THRESH_GAUSSIAN_C threshold and th3 mask result in 33/59
+    '''
     
     return characters_image
 
@@ -356,6 +375,7 @@ def extract_text_from_folder(input, output):
             
             # Calls display funcation
             # show_detected_text(img)
+            # show_detected_text_from_image(img)
             
             # Construct the full path to the text file
             text_file_name = os.path.splitext(file_name)[0] + ".txt"

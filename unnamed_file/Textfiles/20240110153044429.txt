@@ -1,16 +1,13 @@
-HEVSPAPER PSU STAFF BULLETIN
+NEWSPAPER_PSU STAFF BULLETIN.
 
-TOWN ee . _
+TOU
+DATE. November, 1971
 
-DATE November, 1971 _
+PAGE eee
 
-PAGE eee —_
-‘list, PENNTAP, recently received
-
-A
-
-1 Award. The award ig the highest
-luntcer service.
+HONOR--Robert H. McCormick, ficld sre ecinlist, PENNTAP, recently received
+the Anierican Cancer Society's Sronz at fward. The award is the highest
+given by the Society for distinguished volunteer service.
 
 Release No.
 
