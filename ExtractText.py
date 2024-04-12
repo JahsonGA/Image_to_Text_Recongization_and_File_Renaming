@@ -6,6 +6,7 @@ import re
 import tempfile
 
 #! BEFORE made public hide file path!
+#TODO hide true path
 pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 
 '''Skew Correction
@@ -282,13 +283,16 @@ def preprocessing(image_path):
     # Increase Contrast
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     enhanced_image = cv2.equalizeHist(gray_image)
-    #* Denoise increases time exponentially for no increase from the 61% success rate of a sample of 92
-    denoised_image = cv2.fastNlMeansDenoising(enhanced_image, None, 20, 7, 21)
+    #* Denoise increases run time exponentially for no increase from the 61% success rate of a sample of 92
+    # denoised_image = cv2.fastNlMeansDenoising(enhanced_image, None, 20, 7, 21)
     # edge = cv2.Canny(enhanced_image,100,200)
 
-    # Calculate white pixel count for binary and inverted binary images
-    _, binary_image = cv2.threshold(denoised_image, 127, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C)
+    # Calculate threshold value for binary images transformation with Adaptive Thresh Gaussian Constant
+    # This will allow a threshold to be calculated at every pixel matrix used.
+    _, binary_image = cv2.threshold(enhanced_image, 127, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C)
     '''
+    The follow methods create a success rate of 61%
+    #TODO try other methods and masks to try and improve performance
     ADAPTIVE_THRESH_GAUSSIAN_C
     THRESH_BINARY_INV
     '''
@@ -304,13 +308,15 @@ def preprocessing(image_path):
         hull = cv2.convexHull(contour)
         cv2.drawContours(convex_hull_mask, [hull], -1, (255), -1)
 
-    # Dilation
+    # Dilation of text found
     kernel = np.ones((5, 5), np.uint8)
     dilated_mask = cv2.dilate(convex_hull_mask, kernel, iterations = 1)
 
     # Bitwise AND with the original image
+    # Creates mask
     characters_image = cv2.bitwise_and(binary_image, binary_image, mask=dilated_mask)
     '''
+    NOTES
     ADAPTIVE_THRESH_GAUSSIAN_C threshold and binary_image mask result in 35/59
     ADAPTIVE_THRESH_GAUSSIAN_C threshold and th3 mask result in 33/59
     Thresh_binary_INV
@@ -318,6 +324,7 @@ def preprocessing(image_path):
     
     return characters_image
 
+#! This function is not complete will not work
 def choose_preprocessing(image_path):
     # Read the image
     image = cv2.imread(image_path)
@@ -367,6 +374,7 @@ def choose_preprocessing(image_path):
 
     return image
 
+# Extract text found in the image and write to a text file
 def extract_text_from_folder(input, output):
     # Iterate over all files in the image folder
     for file_name in os.listdir(input):
