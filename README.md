@@ -39,10 +39,6 @@ pip install pandas
 pip install nltk
 ```
 
-```bash
-pip install nltk
-```
-
 ## Usage
 
 ### Keyword Extraction
