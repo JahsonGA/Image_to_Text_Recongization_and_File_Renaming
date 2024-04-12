@@ -5,6 +5,39 @@ This project includes Python scripts for text processing tasks such as keyword e
 ## Installation
 
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install NLTK.
+### On Windows
+```
+pip install pytesseract
+```
+### On Linux
+```
+sudo apt-get install tesseract-ocr
+```
+
+### Install opencv
+```
+pip install opencv-python
+```
+
+### Install numpy
+```
+pip install numpy
+```
+
+### Install PIL (Python Imaging Library)
+```
+pip install Pillow
+```
+
+### Install pandas
+```
+pip install pandas
+```
+
+### Install nltk
+```
+pip install nltk
+```
 
 ```bash
 pip install nltk
