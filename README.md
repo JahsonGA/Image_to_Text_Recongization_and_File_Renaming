@@ -8,6 +8,7 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install NLTK.
 
 ```bash
 pip install nltk
+```
 
 ## Usage
 
@@ -20,6 +21,7 @@ from keyword_extraction import extract_keywords
 text = "Sample text for keyword extraction."
 keywords = extract_keywords(text, n=5)
 print(keywords)
+```
 
 ### Text Summarization
 
@@ -31,6 +33,7 @@ from text_summarization import Asummarize_text
 text = "Sample text for summarization."
 summary = Asummarize_text(text)
 print(summary)
+```
 
 ### File Operations
 
@@ -45,6 +48,7 @@ manual_review_folder = "manual_review_folder_path"
 image_folder = "image_folder_path"
 
 move_files(input_folder, output_folder, manual_review_folder, image_folder)
+```
 
 ## Text Processing:
 
