@@ -145,7 +145,9 @@ def show_detected_text(image_path):
     cv2.imshow('Detected Text', cv2.resize(image,(700,800)))
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-    
+
+'''Shows the edited image with boxes will the letter opencv sees when given a image object rather than a path string'''    
+
 def show_detected_text_from_image(image):
     # Read the image from preprocessed image
     # image = preprocessing(image)
@@ -157,7 +159,7 @@ def show_detected_text_from_image(image):
         box = box.split(' ')
         x, y, w, h = int(box[1]), int(box[2]), int(box[3]), int(box[4])
         image = cv2.rectangle(image, (int(box[1]), image.shape[0] - int(box[2])), (int(box[3]), image.shape[0] - int(box[4])), (0, 0, 255), 2) # Red color for bounding box
-        cv2.putText(image, box[0], (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2, cv2.LINE_AA) # Red color for text
+        cv2.putText(image, box[0], (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA) # Red color for text
     
     # Display the image
     cv2.imshow('Detected Text', cv2.resize(image,(700,800)))
@@ -280,11 +282,16 @@ def preprocessing(image_path):
     # Increase Contrast
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     enhanced_image = cv2.equalizeHist(gray_image)
+    #* Denoise increases time exponentially for no increase from the 61% success rate of a sample of 92
+    denoised_image = cv2.fastNlMeansDenoising(enhanced_image, None, 20, 7, 21)
+    # edge = cv2.Canny(enhanced_image,100,200)
 
     # Calculate white pixel count for binary and inverted binary images
-    _, binary_image = cv2.threshold(enhanced_image, 127, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C)
-    '''ADAPTIVE_THRESH_GAUSSIAN_C
-    THRESH_BINARY_INV'''
+    _, binary_image = cv2.threshold(denoised_image, 127, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C)
+    '''
+    ADAPTIVE_THRESH_GAUSSIAN_C
+    THRESH_BINARY_INV
+    '''
     
     # Otsu's thresholding after Gaussian filtering
     blur = cv2.GaussianBlur(binary_image,(5,5),0)
@@ -306,6 +313,7 @@ def preprocessing(image_path):
     '''
     ADAPTIVE_THRESH_GAUSSIAN_C threshold and binary_image mask result in 35/59
     ADAPTIVE_THRESH_GAUSSIAN_C threshold and th3 mask result in 33/59
+    Thresh_binary_INV
     '''
     
     return characters_image

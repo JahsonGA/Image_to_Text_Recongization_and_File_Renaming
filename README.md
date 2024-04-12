@@ -39,10 +39,6 @@ pip install pandas
 pip install nltk
 ```
 
-```bash
-pip install nltk
-```
-
 ## Usage
 
 ### Keyword Extraction
@@ -85,16 +81,22 @@ move_files(input_folder, output_folder, manual_review_folder, image_folder)
 
 ## Text Processing:
 
-### Keyword Extraction: The extract_keywords function extracts keywords from a given text using NLTK's tokenization, stop word removal, and lemmatization.
-### Text Summarization: The Asummarize_text function summarizes text extractively using TF-IDF vectorization and cosine similarity.
-### Text Summarization (Alternative): The Esummarize_text function provides an alternative summarization method using word frequency and sentence scoring.
+### Keyword Extraction: 
+The extract_keywords function extracts keywords from a given text using NLTK's tokenization, stop word removal, and lemmatization.
+### Text Summarization: 
+The Asummarize_text function summarizes text extractively using TF-IDF vectorization and cosine similarity.
+### Text Summarization (Alternative): 
+The Esummarize_text function provides an alternative summarization method using word frequency and sentence scoring.
 ## File Operations:
 
-### Move Files Based on Keywords: The move_files function moves image files to specified output folders based on keywords extracted from associated text files.
+### Move Files Based on Keywords: 
+The move_files function moves image files to specified output folders based on keywords extracted from associated text files.
 ## Other Features:
 
-### File Name Renaming: Text files are renamed based on extracted keywords for better organization.
-### Date and Publisher Extraction: The project can extract dates and publishers from text for file naming purposes.
+### File Name Renaming: 
+Text files are renamed based on extracted keywords for better organization.
+### Date and Publisher Extraction: 
+The project can extract dates and publishers from text for file naming purposes.
 
 # Resourced Used
 https://nanonets.com/blog/ocr-with-tesseract/

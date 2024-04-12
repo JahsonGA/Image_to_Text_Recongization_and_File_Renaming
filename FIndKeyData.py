@@ -196,7 +196,7 @@ def extract_summary_from_text(text):
 
     # Extract dates using regex
     #TODO adjust date search to find with month day year or month year.
-                                            #vv Month,Day year vv                                                                                                                vv day month year vv day month year                                                                        vv month year vv day month year vv                                                          
+                                            #vv Month,Day year vv                                                                                                                vv day month year vv                                                                                 vv month year vv day month year vv                                                          
     date_match = re.search(r'(?:(?:January|February|March|April|May|June|July|August|September|October|November|December|\d{1,2})\s+\d{1,2},?\s+\d{4})|(?:\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})|(?:January|February|March|April|May|June|July|August|September|October|November|December),?\s+\d{4}', str(text), re.IGNORECASE)
     if date_match:     
         date_str = date_match.group()
@@ -307,7 +307,6 @@ def read_text_file_and_rename_image(text_file_path):
             return new_file_name, file_name, text # Return the new file, text_file location, and text gathered. 
             # What if there is a global variable to count the number of files read in the folder.
             # It worked
-            #TODO find a way to mark a file as manual review. 
             
         #return completedArry # Return the new file, text_file location, and text gathered. 
 

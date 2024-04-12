@@ -1,38 +1,39 @@
-NEWSPAFER
+NEWS PAPER
 
-TOWN _
-DATR, | ;
+TOWN
+
+DATR,
+
 PAGE
-92 Bh
-Mid tlantic Newspaper
+
+a
+mid Efantic Newspaper
 
 Services, Inc.
 
-2717 WN. Freed 8t,, Harriaburg, Pa.
+2717 MM. Front $t., Harrisburg, Pa.
 
 POTTSVILLE, PA.
 
 Republican (e)
 Circ. 28,528
 
+‘Program
+
 Has Outlet
-In County
 
-; The continuing edt
-Stat
-5 =
-Campus _is among 23
-university ‘‘receiving
+Campus is among 23
+university ‘‘regeiving
 
-} stations” for PERRI AR. a.
-Pennsylvania echnical
+‘| stations” for PBENBTAP, a.
+Pennsylvania” “Feehmical
 
 Assistance Program
-administered by the uni-
+administeréd by the uni-
 versity.
 
 PENNTAP extends its
-service to those who can
+service to those who: can.
 apply scientific and
 technical information to
 solve existing problems, not
@@ -42,7 +43,7 @@ technology is delivered
 through a number of
 projects including
 workshops and short
-courses, 4a library
+courses, a@ library
 information system, radio
 broadcasts and the work of
 technically qualified field
@@ -50,4 +51,3 @@ specialists to aid the user in
 defining and solving his
 problems.
 
-‘Program \
