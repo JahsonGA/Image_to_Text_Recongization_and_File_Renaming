@@ -47,64 +47,105 @@ pip install pandas
 pip install nltk
 ```
 
-## Usage
+# Usage
+Use the `ExtractText.py` to gather the text and `FindKeyData.py` to filter the files based on the text of the extracted data.
+## ExtractText
+
+### Deskew
+`Skew Correction`
+While scanning or taking a picture of any document, 
+it is possible that the scanned or captured image might be slightly skewed sometimes. 
+For the better performance of the OCR, it is good to determine the skewness in image and correct it.
+
+### Set Image DPI
+`set_image_dpi`
+To achieve a better performance of OCR, 
+the image should have more than 300 PPI (pixel per inch). 
+So, if the image size is less than 300 PPI, we need to increase it. 
+We can use the Pillow library for this.
+
+### Noise Removal
+`remove_noise`
+This step removes the small dots/patches 
+which have high intensity compared to the rest of the image for smoothening of 
+the image. OpenCV's fast Nl Means Denoising Coloured function can do that easily.
+
+### Gray Scale image
+`get_grayscale`
+This process converts an image from other color spaces to shades of Gray. 
+The colour varies between complete black and complete white. 
+OpenCV's cvtColor() function perform this task very easily.
+
+### Thresholding or Binarization
+`thresholding`
+This step converts any colored image into a binary image that contains only two colors black and white. 
+It is done by fixing a threshold (normally half of the pixel range 0-255, i.e., 127). 
+The pixel value having greater than the threshold is converted into a white pixel else into a black pixel. 
+To determine the threshold value according to the image Otsu's Binarization and Adaptive Binarization can be a better choice. 
+In OpenCV, this can be done as given.
+
+### Counts White Pixels
+`get_white_pixel_count`
+
+### Noise Reduces
+`needs_noise_reduction`
+Helper function for determining which image processing algorithm to use
+
+### Show text found
+`show_detected_text`
+Shows the edited image with boxes will the letter opencv sees. Given a image path or image object it will create.
+
+### Preprocessing
+There are two function used for image preprocessing. The only difference is how the preprocessing is preformed. Both need an image path
+
+`preprocess_for_ocr`
+Increase Contrast, Calculate white pixel count for binary and inverted binary images, Choose the 'better' image based on white pixel count. Once the pixel count has been calculated and the image is in binary/invert binary form, then the Gaussian blur is applied. The threshold is then calculated for image to define edge in the image. Next remove small objects found within the image and enhance the image by dialing the text to make it larger and more recognizable. Finally pixel are removed to sharpen the image and the resolution increases. 
+`preprocessing`
+Similar to the function above, after the image contrast is increased and the image is converted a binary image. But afterwards the Otsu's thresholding and Gaussian filtering is done on the image. This information is used to calculate a mask over all the places with text and the text is dilated. The image is bitwise and operation is done to combine the mask and binary image to find the text. 
+
+### Extract text
+Extract text found in the image and write to a text file when given a path to a folder containing images and a path to a folder for the text files to be sent.
+`extract_text_from_folder` 
+Extract text found in the image and write to a text file. Iterate over all files in the image folder:
+Check if the file is a TIFF image. If it has been:
+    Construct the full path to the image file
+    Extract text from the image
+    Perform OCR using pytesseract
+    Calls display funcation
+    Construct the full path to the text file
+    Write the extracted text to the text file
+
+## FindKeyData
 
 ### Keyword Extraction
 Use the `extract_keywords` function to extract keywords from a given text.
 
-```python
-from keyword_extraction import extract_keywords
-
-text = "Sample text for keyword extraction."
-keywords = extract_keywords(text, n=5)
-print(keywords)
-```
+The function to extract keywords from given text and find n number of key words from the passage. Function return a list of keywords.
+Note:
+Stemmer removes prefix/suffix from words. Lemmatization looks for the meaning of words and chance it to its simplest form.
+which would be better for extraction? Lemmatization because it can reduce the noise and variability, making it better for text recognition.
 
 ### Text Summarization
 
-Use the `Asummarize_text` function to summarize text extractively.
+Use the `Asummarize_text` function to summarize text. Summarization uses abstractive text summarization. 
 
-```python
-from text_summarization import Asummarize_text
+The function take a list of text and return a list of that same text but it is summarized by using an abstractive text summarization. Abstractive summarization is used to summarize text because it uses a natural language techniques to interpret and understand the important aspects of a text and generate a more “human” friendly summary. While an Extractive summarization involves identifying important sections from text and generating them verbatim which produces a subset of sentences from the original text. [read more here](https://blog.paperspace.com/extractive-and-abstractive-summarization-techniques/). 
 
-text = "Sample text for summarization."
-summary = Asummarize_text(text)
-print(summary)
-```
 
 ### File Operations
 
-Use the `move_files` function to move files based on keywords.
+Use the `move_files` function to rename and move files based on keywords found.
 
-```python
-from file_operations import move_files
-
-input_folder = "input_folder_path"
-output_folder = "output_folder_path"
-manual_review_folder = "manual_review_folder_path"
-image_folder = "image_folder_path"
-
-move_files(input_folder, output_folder, manual_review_folder, image_folder)
-```
-
-## Text Processing:
+This function need a path to text files folder gathered from `ExtractText`, path to success folder, path to where the manual review images should be sent, and path to images folder. This function is going to read the text from an image with the `read_text_file_and_rename_image` function. If `read_text_file_and_rename_image` function marked it as correct then it will be moved to the success folder given, otherwise it will be moved to a manual review folder. At the end the text file used for the renaming will be removed.
 
 ### Keyword Extraction: 
-The extract_keywords function extracts keywords from a given text using NLTK's tokenization, stop word removal, and lemmatization.
-### Text Summarization: 
-The Asummarize_text function summarizes text extractively using TF-IDF vectorization and cosine similarity.
-### Text Summarization (Alternative): 
-The Esummarize_text function provides an alternative summarization method using word frequency and sentence scoring.
-## File Operations:
 
-### Move Files Based on Keywords: 
-The move_files function moves image files to specified output folders based on keywords extracted from associated text files.
-## Other Features:
+The `extract_keywords_from_text` function given a summarized text file, the function used a regular expression to find words used in dates or publication. Then a list holds the information gathered from the regular expression from `read_text_file_and_rename_image` function. 
 
-### File Name Renaming: 
-Text files are renamed based on extracted keywords for better organization.
-### Date and Publisher Extraction: 
-The project can extract dates and publishers from text for file naming purposes.
+the `read_text_file_and_rename_image` function given a text file path, returns new_filename, txt_file at the iteration, and text summary. Read text from the text file line by line and run `Asummarize_text` to build the summary. Construct a new file name based on the summary: If there is a date in the summary add to the file name
+If there is a publisher in the summary add it file name
+If there is already a date in the file name then skip it
+
 
 # Resourced Used
 https://nanonets.com/blog/ocr-with-tesseract/
