@@ -131,6 +131,8 @@ Use the `Asummarize_text` function to summarize text. Summarization uses abstrac
 
 The function take a list of text and return a list of that same text but it is summarized by using an abstractive text summarization. Abstractive summarization is used to summarize text because it uses a natural language techniques to interpret and understand the important aspects of a text and generate a more “human” friendly summary. While an Extractive summarization involves identifying important sections from text and generating them verbatim which produces a subset of sentences from the original text. [read more here](https://blog.paperspace.com/extractive-and-abstractive-summarization-techniques/). 
 
+Use the `contains_only_stop_words`function to determine if there is a file has only stop words. If it does the text insn't run through the `Asummarize_text`. Returns true or false.
+
 
 ### File Operations
 
@@ -170,3 +172,5 @@ https://learnopencv.com/otsu-thresholding-with-opencv/
 https://www.projectpro.io/recipes/remove-noise-from-images-opencv
 https://docs.opencv.org/4.x/da/d22/tutorial_py_canny.html
 https://docs.opencv.org/3.4/d9/d61/tutorial_py_morphological_ops.html
+https://docs.opencv.org/3.4/d5/d69/tutorial_py_non_local_means.html
+https://www.geeksforgeeks.org/opencv-python-tutorial/#feature

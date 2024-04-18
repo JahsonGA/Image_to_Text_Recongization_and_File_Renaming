@@ -5,6 +5,11 @@ import os
 import re
 import tempfile
 
+# importing necessary functions from dotenv library
+from dotenv import load_dotenv, dotenv_values 
+# loading variables from .env file
+load_dotenv() 
+
 #! BEFORE made public hide file path!
 #TODO hide true path
 pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
@@ -324,6 +329,41 @@ def preprocessing(image_path):
     
     return characters_image
 
+def preprocessing2(image_path):
+    # Read image from which text needs to be extracted
+    image = cv2.imread(image_path)
+    
+    # Preprocessing the image starts
+    
+    # Convert the image to gray scale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Performing OTSU threshold
+    ret, thresh1 = cv2.threshold(gray, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)
+    
+    # Specify structure shape and kernel size. 
+    # Kernel size increases or decreases the area 
+    # of the rectangle to be detected.
+    # A smaller value like (10, 10) will detect 
+    # each word instead of a sentence.
+    rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (10, 10))
+    
+    # Applying dilation on the threshold image
+    dilation = cv2.dilate(thresh1, rect_kernel, iterations = 1)
+    
+    # Finding contours
+    contours, hierarchy = cv2.findContours(dilation, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    
+    # Dilation of text found
+    kernel = np.ones((5, 5), np.uint8)
+    dilated_mask = cv2.dilate(contours, kernel, iterations = 1)
+
+    # Bitwise AND with the original image
+    # Creates mask
+    characters_image = cv2.bitwise_and(thresh1, thresh1, mask=dilated_mask)
+    
+    return characters_image
+
 #! This function is not complete will not work
 def choose_preprocessing(image_path):
     # Read the image
@@ -385,9 +425,11 @@ def extract_text_from_folder(input, output):
             # Extract text from the image
             # Perform OCR using pytesseract
             # img = preprocess_for_ocr(image_path)
-            img = preprocessing(image_path)
-            # img = choose_preprocessing(image_path)
+            #img = preprocessing(image_path)
+            img = preprocessing2(image_path)
             text = pytesseract.image_to_string(img)
+            
+            #TODO update new preprocessing2()
             
             # Calls display funcation
             # show_detected_text(img)

@@ -139,15 +139,24 @@ def Esummarize_text(text):
     
     return summary
 
+def contains_only_stop_words(text):
+    # Tokenize the text into words
+    words = word_tokenize(text.lower())
+
+    # Check if all words are stop words
+    all_stop = all(word in stopwords.words('english') for word in words)
+
+    return all_stop
+
 def Asummarize_text(text):
     # Tokenize the text into sentences
     sentences = sent_tokenize(text)
 
     # Check if the text contains enough non-stop words for summarization
-    non_stop_words_exist = any(word not in stopwords.words('english') for word in word_tokenize(text))
+    #non_stop_words_exist = any(word not in stopwords.words('english') for word in word_tokenize(text))
 
-    if not non_stop_words_exist:
-        return "Text does not contain enough meaningful content for summarization."
+    #if not non_stop_words_exist:
+    #    return "Text does not contain enough meaningful content for summarization."
     
     # Create a TF-IDF vectorizer
     #Term Frequency-Inverse document Frequency
@@ -279,6 +288,11 @@ def read_text_file_and_rename_image(text_file_path):
             summary.close()
             
             # aText = Asummarize_text(text)
+            if(contains_only_stop_words(text)):
+                # Text has only stop words. mark it for removeal
+                new_file_name = new_file_name[:0] + '_' + new_file_name[0:]
+                return new_file_name, file_name, text
+            
             extr_aText = extract_keywords(Asummarize_text(text))
             
             # print("Summarized using abtract: \n",aText)   #give summarize of text
