@@ -66,15 +66,15 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
             if  new_filename != '' and new_filename[0] != '_':  # if the newfile name doesn't exist then more the file into the manual review folder
                 new_filename = new_filename + ".tif"
                 new_filepath = os.path.normpath(os.path.join(output_folder, new_filename))
-                # sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(new_filepath))
-                print("Scr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(new_filepath))
+                sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(new_filepath))
+                #print("Scr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(new_filepath))
                 completedCount += 1
             else:
-                # sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(os.path.join(manual_review_folder,image_name)))
-                print("Manual\nScr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(os.path.join(manual_review_folder,image_name)))
+                sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(os.path.join(manual_review_folder,image_name)))
+                #print("Manual\nScr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(os.path.join(manual_review_folder,image_name)))
                 manualCount += 1
                 
-            #os.remove(os.path.normpath(os.path.join(input_folder, txt_file)))
+            os.remove(os.path.normpath(os.path.join(input_folder, txt_file)))
         count += 1
         
 #*Compared to online summarizer
@@ -338,5 +338,4 @@ if __name__ == "__main__":
     # read_text_file_and_rename_image(input_folder)
     print("Success: ", completedCount, "Fail: ", manualCount)
     
-    #TODO correct move_file() to work with new file name  
-    # Solved but now all files go into complete_images. Need to find a way to mark files as manual_review_images
+    #TODO current idea is to use EAST ML method to find text in an image and then send the information found to a text file.

@@ -10,6 +10,18 @@ After doing a test on the image processing, I discovered that a large amount of 
  
 I am current working on improve the image preprocessing to ensure that the most about of file can be found at one time. Currently the highest the algorithm has scored is 61%. I want to try noise reduction to improve text detection. As of now it is only returns a success score of 58% with a sample size of 92.  
 
+### 4/19/24
+I started gathering resource to make a ML model for image detection using OpenCV’s EAST(Efficient and Accurate Scene Text Detection ) text detector. I moved the successful 61% to the main database to be used by marketing. I will need to work on a algorithm to manage the database for easy convince for marketing.
+Below is a list of links that contain useful information about EAST and provide and idea how I can use to meet our goal.
+(What is the best way to detect text in an image using OpenCV/Python? How accurate is this method compared to other methods used for text detection (e.g., Tesseract)?)[https://www.quora.com/What-is-the-best-way-to-detect-text-in-an-image-using-OpenCV-Python-How-accurate-is-this-method-compared-to-other-methods-used-for-text-detection-e-g-Tesseract]
+(Home > Deep Learning > Deep Learning Based Text Detection Using OpenCV (C++/Python)
+Deep Learning Based Text Detection Using OpenCV (C++/Python))[https://learnopencv.com/deep-learning-based-text-detection-using-opencv-c-python/]
+(Deep Neural Network module)[https://docs.opencv.org/4.2.0/d6/d0f/group__dnn.html#ga3b34fe7a29494a6a4295c169a7d32422]
+(cv::dnn::TextDetectionModel_EAST Class Reference)[https://docs.opencv.org/4.x/d8/ddc/classcv_1_1dnn_1_1TextDetectionModel__EAST.html]
+(OpenCV Text Detection (EAST text detector))[https://pyimagesearch.com/2018/08/20/opencv-text-detection-east-text-detector/]
+(EAST-Detector-for-text-detection-using-OpenCV)[https://github.com/ZER-0-NE/EAST-Detector-for-text-detection-using-OpenCV/blob/master/opencv_text_detection_image.py]
+
+
 ## Installation
 
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install NLTK.
@@ -45,6 +57,17 @@ pip install pandas
 ### Install nltk
 ```
 pip install nltk
+```
+
+### non_max_suppression
+A Python package to perform Non Maximal Suppression.
+```
+pip install nms
+```
+
+### imutils
+```
+pip install imutils
 ```
 
 # Usage
