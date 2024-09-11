@@ -337,5 +337,6 @@ if __name__ == "__main__":
     # read_text_file_and_rename_image(input_folder)
     # read_text_file_and_rename_image(input_folder)
     print("Success: ", completedCount, "Fail: ", manualCount)
+    print("Success Rate: ", (completedCount / (completedCount + manualCount)) * 100)
     
     #TODO current idea is to use EAST ML method to find text in an image and then send the information found to a text file.

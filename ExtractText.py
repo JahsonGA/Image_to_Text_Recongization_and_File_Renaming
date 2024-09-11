@@ -206,87 +206,49 @@ def text_detection(image_path):
     # cv2.imshow('Detected Text', cv2.resize(img,(700,850)))
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
-
-
-def preprocess_for_ocr(image_path):
-    #TODO refine image processing
-    # Read the image
-    image = cv2.imread(image_path)
-
+def remove_noise_and_smooth(image):
     # Increase Contrast
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    enhanced_image = cv2.equalizeHist(gray_image)
-
-    #TODO
-    # 1) Find a way to calculate the number of binary and inverted binary pixel and pick the value that is 'better'
-    # 2) Look for a way to correct skew in sections of an image.
-    #   2a) This might not be possible within time frame.
-    # Once this is complete the text detection and extraction should be done. 
-    #*Compared to online  
-    #   a) text detection my compares well but can still be improved when black on white background
-    #   b) When inverted binary online text detection fails. which means mine is better
-    #   c) Also fails for non standard text placement. Which means mine is the similar
     
-    # Calculate white pixel count for binary and inverted binary images
-    _, binary_image = cv2.threshold(enhanced_image, 127, 255, cv2.THRESH_BINARY)
-    _, inverted_binary_image = cv2.threshold(enhanced_image, 127, 255, cv2.THRESH_BINARY_INV)
-    white_pixel_count_binary = get_white_pixel_count(binary_image)
-    white_pixel_count_inverted_binary = get_white_pixel_count(inverted_binary_image)
-
-    # Choose the 'better' image based on white pixel count
-    if white_pixel_count_binary >= white_pixel_count_inverted_binary:
-        final_image = binary_image
-    else:
-        final_image = inverted_binary_image
+    #adaptive threshold to filter out noise and enhance text visibility
+    filter = cv2.adaptiveThreshold(gray_image,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,9,41)
     
-    #! Rotates the whole image clockwise by 90 degrees instead of regions of an image. 
-    '''# Used to rotate part of an image. these regions are correct to increase text recondition. 
-    # Find contours and bounding boxes of text regions
-    contours, _ = cv2.findContours(final_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    for contour in contours:
-        # Get bounding box of the contour
-        x, y, w, h = cv2.boundingRect(contour)
-
-        # Extract the text region from the image
-        text_region = final_image[y:y+h, x:x+w]
-
-        # Apply skew correction to the text region
-        deskewed_text_region = deskew(text_region)
-
-        # Replace the text region in the original image with the deskewed region
-        final_image[y:y+h, x:x+w] = deskewed_text_region'''
+    #kernel for morphological ops: erosion and dilation
+    kernel = np.ones((1,1), np.uint8)
     
-    #This section works the best of find both the most amount of words and the numbers with the least unknown values
-    # global thresholding
-    # ret1,binary_imageG = cv2.threshold(final_image,127,255,cv2.THRESH_BINARY)
-    # Otsu's thresholding
-    # ret2,binary_imageO = cv2.threshold(binary_imageG,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)'''
-    # Otsu's thresholding after Gaussian filtering
-    blur = cv2.GaussianBlur(final_image,(5,5),0)
-    ret3,binary_image = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-
-    # Remove Small Objects
-    kernel = np.ones((1, 1), np.uint8)
-    binary_image = cv2.morphologyEx(binary_image, cv2.MORPH_CLOSE, kernel)
-
-    # Enhance Text Regions
-    binary_image = cv2.dilate(binary_image, kernel, iterations=1)
-
-    # Normalization (Optional)
-    # norm_img = np.zeros((binary_image.shape[0], binary_image.shape[1]))
-    # normalized_image = cv2.normalize(binary_image, norm_img, 0, 255, cv2.NORM_MINMAX)
+    # Perform morphological opening to remove small noise regions
+    opening = cv2.morphologyEx(filter, cv2.MORPH_OPEN, kernel)
     
-    # Find contours and bounding boxes
-    '''contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    bounding_boxes = [cv2.boundingRect(cnt) for cnt in contours]'''
+    # perform morpthological closing to fill gaps in text regions
+    closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel)
     
-    # Removes pixels on object boundaries.
-    erosion = cv2.erode(binary_image, kernel, iterations=1)
-
-    # Image Scaling (DPI Adjustment)
-    dpi_adjusted_image = set_image_dpi(erosion)
-      
-    return dpi_adjusted_image
+    img = preprocess_for_ocr(image)
+    
+    or_img = cv2.bitwise_or(img,closing)
+    
+    return or_img
+    
+def preprocess_for_ocr(image):
+    #smoothing image
+    # image = cv2.imread(image_path) #needed if imread() was not called yet
+    
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    #binary thresholding
+    #pixels with intensity greater than or equal to 88 are set to white while other are set to black
+    ret1, th1 = cv2.threshold(image,88,255,cv2.THRESH_BINARY)
+    
+    #OTSU's Thresholding
+    ret2, th2 = cv2.threshold(th1,0,255,cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    #gaussian blurring to reduce noise
+    blur = cv2.GaussianBlur(th2,(5,5),0)
+    
+    #OTSU's Thresholding
+    ret3, th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    #returns smoothed image
+    return th3
 
 def preprocessing(image_path):
     # Read the image
@@ -327,16 +289,25 @@ def preprocessing(image_path):
     # Bitwise AND with the original image
     # Creates mask
     characters_image = cv2.bitwise_and(binary_image, binary_image, mask=dilated_mask)
+    #* not the the wrong program was running these numbers are wrong and need retesting.
     '''
     NOTES
     ADAPTIVE_THRESH_GAUSSIAN_C threshold and binary_image mask result in 35/59
-    ADAPTIVE_THRESH_GAUSSIAN_C threshold and th3 mask result in 33/59
+    ADAPTIVE_THRESH_GAUSSIAN_C threshold and th3 mask result in 32/60
+    ADAPTIVE_THRESH_GAUSSIAN_C threshold and th3 and binary_image mask result in 32/60
+    
+    ADAPTIVE_THRESH_GAUSSIAN_C threshold and bitwise AND on image with dilated mask results in 32/60
+    ADAPTIVE_THRESH_GAUSSIAN_C threshold and bitwise AND on image with th3 mask results in 32/60
+    ADAPTIVE_THRESH_GAUSSIAN_C threshold and bitwise AND on image with binary_image mask results in 32/60
+    
     Thresh_binary_INV
     '''
     
     return characters_image
 
 def preprocessing2(image_path):
+    # Efficient and Accurate Scene Text (EAST) for Opencv
+    
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--image", type=str,
@@ -352,8 +323,8 @@ def preprocessing2(image_path):
     args = vars(ap.parse_args())
 
     # load the input image and grab the image dimensions
-    image = cv2.imread(args["image"])
-    orig = image.copy()
+    image = cv2.imread(image_path)
+    orig = cv2.imread(image_path)
     (H, W) = image.shape[:2]
 
     # set the new width and height and then determine the ratio in change
@@ -375,7 +346,7 @@ def preprocessing2(image_path):
 
     # load the pre-trained EAST text detector
     print("[INFO] loading EAST text detector...")
-    net = cv2.dnn.readNet(args["east"])
+    net = cv2.dnn.readNet(".\\frozen_east_text_detection.pb")
 
     # construct a blob from the image and then perform a forward pass of
     # the model to obtain the two output layer sets
@@ -455,9 +426,9 @@ def preprocessing2(image_path):
         endY = int(endY * rH)
 
         # draw the bounding box on the image
-        cv2.rectangle(orig, (startX, startY), (endX, endY), (0, 255, 0), 2)
-    
-    return 
+        img = cv2.rectangle(orig, (startX, startY), (endX, endY), (0, 255, 0), 2)
+            
+    return img
 
 #! This function is not complete will not work
 def choose_preprocessing(image_path):
@@ -519,15 +490,18 @@ def extract_text_from_folder(input, output):
             image_path = os.path.join(input, file_name)    
             # Extract text from the image
             # Perform OCR using pytesseract
-            # img = preprocess_for_ocr(image_path)
-            img = preprocessing(image_path)
-            # img = preprocessing2(image_path)
-            text = pytesseract.image_to_string(img)
+            #? newest image dection and smoothing
+            image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+            img = remove_noise_and_smooth(image)          # %39.13
             
-            #TODO update new preprocessing2()
+            # img = preprocessing(image_path)             # %38.04
+            # img = preprocessing2(image_path)            # %22.82
             
+            #* NOTE proprocessing2 the blue needs uncommenting before other test
+            text = pytesseract.image_to_string(img) #needed for preprocessing 
+                      
             # Calls display funcation
-            # show_detected_text(img)
+            # show_detected_text(image_path)
             # show_detected_text_from_image(img)
             
             # Construct the full path to the text file
@@ -541,6 +515,3 @@ if __name__ == "__main__":
     input = ".\\unnamed_file"
     output = ".\\unnamed_file\\Textfiles"
     extract_text_from_folder(input,output)
-    
-#TODO create a readme to update everything that has been done. Send to Boss and list todos for when I get back. 
-#TODO current idea is to use EAST ML method to find text in an image and then send the information found to a text file.
