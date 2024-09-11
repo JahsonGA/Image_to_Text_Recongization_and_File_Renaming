@@ -21,6 +21,12 @@ Deep Learning Based Text Detection Using OpenCV (C++/Python))[https://learnopenc
 (OpenCV Text Detection (EAST text detector))[https://pyimagesearch.com/2018/08/20/opencv-text-detection-east-text-detector/]
 (EAST-Detector-for-text-detection-using-OpenCV)[https://github.com/ZER-0-NE/EAST-Detector-for-text-detection-using-OpenCV/blob/master/opencv_text_detection_image.py]
 
+# Dev log
+### 9/11/24
+Reviewed the previous code and improved image detection to reach 62% again. OpenCV’s EAST(Efficient and Accurate Scene Text Detection) does not improve the success rate. While looking at the images given many of the files marked manual review were just images with little to no text. Since the algorithm needs a certain number of non-stop English words, all files that contain just images are marked as manual review. Also in the sample, there exist some files with multiple pages that I assume contain more information about images. For example, file name 20231207102338062.tif has an image on the first page and then text, assumingly, about the image on the next page. I want to know if this is the case. When looking into the original file, I discovered that I couldn't access the PennTAP Documents where most files needing to be sampled are stored. 
+
+Currently success rate stands at %39.13 out of 92 files 36 are successfully read, renamed, and moved. To improve this number further I want make files in manual review be scanned again but this time they will have a more specify filtering. This should increase the success rate further at the cost of performance. 
+
 
 ## Installation
 
