@@ -155,7 +155,7 @@ def show_detected_text(image_path):
         cv2.putText(image, box[0], (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2, cv2.LINE_AA) # Red color for text
     
     # Display the image
-    cv2.imshow('Detected Text', cv2.resize(image,(700,800)))
+    cv2.imshow(os.path.basename(image_path), cv2.resize(image,(700,800)))
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
@@ -210,11 +210,20 @@ def remove_noise_and_smooth(image):
     # Increase Contrast
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
-    #adaptive threshold to filter out noise and enhance text visibility
-    filter = cv2.adaptiveThreshold(gray_image,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,9,41)
+    #adaptive threshold to filter out noise and enhance text visibility                             blocksize,constant C
+    #   average threshold is subtracted by this constant. The hight the values help keep the average when images have varying lighting
+    filter = cv2.adaptiveThreshold(gray_image,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,9,41)
+    #* changed ADAPTIVE_THRESH_MEAN_C to ADAPTIVE_THRESH_GAUSSIAN_C
+            #? results in a 37/55 which is a 40.2% success rate
+            #! increased block size from 9 to 11, results in 39.1.
     
     #kernel for morphological ops: erosion and dilation
+    #   creates a matrix. used to smooth out an image. the large the matrix more smoothing done
     kernel = np.ones((1,1), np.uint8)
+    #* changed matrix size to 2x2 from 1x1
+        #! results in 15.2
+    #* changed matrix size to 3x3
+        #! 1/91
     
     # Perform morphological opening to remove small noise regions
     opening = cv2.morphologyEx(filter, cv2.MORPH_OPEN, kernel)
@@ -237,12 +246,22 @@ def preprocess_for_ocr(image):
     #binary thresholding
     #pixels with intensity greater than or equal to 88 are set to white while other are set to black
     ret1, th1 = cv2.threshold(image,88,255,cv2.THRESH_BINARY)
+    #* increase divide between white and black pixel to 78 from 88
+    #!  results of 40.2% 37/55
+    #* increase divide between white and black pixel to 98 from 88
+    #!  results of 40.2% 37/55
     
     #OTSU's Thresholding
     ret2, th2 = cv2.threshold(th1,0,255,cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     
     #gaussian blurring to reduce noise
-    blur = cv2.GaussianBlur(th2,(5,5),0)
+    blur = cv2.GaussianBlur(th2,(9,9),0)
+    #* increased matrix to 9x9 from 5x5
+    #?  results in 42.68% 35/47
+    #* increased matrix to 11x11 from 9x9
+    #!  results in 40.2% 37/55
+    #* increased matrix to 10x10 from 9x9
+    #!  faild to complie, must be odd matrix
     
     #OTSU's Thresholding
     ret3, th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -296,7 +315,7 @@ def preprocessing(image_path):
     ADAPTIVE_THRESH_GAUSSIAN_C threshold and th3 mask result in 32/60
     ADAPTIVE_THRESH_GAUSSIAN_C threshold and th3 and binary_image mask result in 32/60
     
-    ADAPTIVE_THRESH_GAUSSIAN_C threshold and bitwise AND on image with dilated mask results in 32/60
+    ADAPTIVE_THRESH_GAUSSIAN_C threshold and bitwise AND on binary image with dilated mask results in 36/56
     ADAPTIVE_THRESH_GAUSSIAN_C threshold and bitwise AND on image with th3 mask results in 32/60
     ADAPTIVE_THRESH_GAUSSIAN_C threshold and bitwise AND on image with binary_image mask results in 32/60
     
@@ -430,56 +449,6 @@ def preprocessing2(image_path):
             
     return img
 
-#! This function is not complete will not work
-def choose_preprocessing(image_path):
-    # Read the image
-    image = cv2.imread(image_path)
-
-    # Increase Contrast
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # enhanced_image = cv2.equalizeHist(gray_image)
-
-    # Calculate white pixel count for binary and inverted binary images
-    # _, binary_image = cv2.threshold(enhanced_image, 127, 255, cv2.THRESH_BINARY)
-    # _, inverted_binary_image = cv2.threshold(enhanced_image, 127, 255, cv2.THRESH_BINARY_INV)
-    # white_pixel_count_binary = cv2.countNonZero(binary_image)
-    # white_pixel_count_inverted_binary = cv2.countNonZero(inverted_binary_image)
-
-    # Choose the preprocessing function based on white pixel count
-    #* Will always use the preprocess_for_ocr()
-    #if white_pixel_count_binary >= white_pixel_count_inverted_binary:
-    #    # Use the preprocess_for_ocr function
-    #    return preprocess_for_ocr(image_path)
-    #else:
-    #    # Use the preprocessing function
-    #    return preprocessing(image_path)
-    # Check if the image needs Noise Reduction
-    if needs_noise_reduction(image):
-        image = apply_noise_reduction(image)
-
-    # Check if the image needs Contrast Enhancement
-    if needs_contrast_enhancement(image):
-        image = apply_contrast_enhancement(image)
-
-    # Check if the image needs Image Resizing
-    if needs_image_resizing(image):
-        image = apply_image_resizing(image)
-
-    # Check if the image needs Color Correction
-    if needs_color_correction(image):
-        image = apply_color_correction(image)
-
-    # Check if the image needs Segmentation
-    if needs_segmentation(image):
-        image = apply_segmentation(image)
-
-    # Check if the image needs feature extraction
-    if needs_feature_extraction(image):
-        features = extract_features(image)
-        return features
-
-    return image
-
 # Extract text found in the image and write to a text file
 def extract_text_from_folder(input, output):
     # Iterate over all files in the image folder
@@ -492,7 +461,7 @@ def extract_text_from_folder(input, output):
             # Perform OCR using pytesseract
             #? newest image dection and smoothing
             image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-            img = remove_noise_and_smooth(image)          # %39.13
+            img = remove_noise_and_smooth(image)          # %42.2
             
             # img = preprocessing(image_path)             # %38.04
             # img = preprocessing2(image_path)            # %22.82
