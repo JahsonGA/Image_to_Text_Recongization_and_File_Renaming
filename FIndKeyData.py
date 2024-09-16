@@ -228,8 +228,8 @@ def extract_summary_from_text(text):
         day = day.zfill(2)
         
         summary['date'] = f"{year}-{month}-{day}"
-    else:
-        summary['date'] = "NODATEFOUND"
+    '''else:
+        summary['date'] = "NODATEFOUND'''
         
     # Extract publisher using regex
     news_match = re.search(r'(?:article|news|newspaper|paper|press|journal)\s+(?:\w+\s+)*(?:times|post|today|day|tribune|globe|news|newspaper|paper|press|journal)', str(text), re.IGNORECASE)
