@@ -221,7 +221,7 @@ def remove_noise_and_smooth(image):
     #   creates a matrix. used to smooth out an image. the large the matrix more smoothing done
     kernel = np.ones((1,1), np.uint8)
     #* changed matrix size to 2x2 from 1x1
-        #! results in 15.2
+        #! results in 15.2%
     #* changed matrix size to 3x3
         #! 1/91
     
@@ -257,7 +257,7 @@ def preprocess_for_ocr(image):
     #gaussian blurring to reduce noise
     blur = cv2.GaussianBlur(th2,(9,9),0)
     #* increased matrix to 9x9 from 5x5
-    #?  results in 42.68% 35/47
+    #?  results in 42.68% 35/57
     #* increased matrix to 11x11 from 9x9
     #!  results in 40.2% 37/55
     #* increased matrix to 10x10 from 9x9

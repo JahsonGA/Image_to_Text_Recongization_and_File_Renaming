@@ -5,6 +5,7 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer
 from nltk import sent_tokenize
+from nltk import ngrams
 from collections import Counter
 import shutil as sh
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -36,7 +37,10 @@ def extract_keywords(text, n=10):
     # Create a WordNetLemmatizer object 
     lemmatizer = WordNetLemmatizer() 
     words = [lemmatizer.lemmatize(word) for word in words]
-    word_freq = Counter(words)
+    '''word_freq = Counter(words)
+    keywords = [word for word, _ in word_freq.most_common(n)]'''
+    bi_grams = ngrams(words, 2)
+    word_freq = Counter(words + [' '.join(bg) for bg in bi_grams])
     keywords = [word for word, _ in word_freq.most_common(n)]
     
     return keywords
@@ -204,7 +208,6 @@ def extract_summary_from_text(text):
     }
 
     # Extract dates using regex
-    #TODO adjust date search to find with month day year or month year.
                                             #vv Month,Day year vv                                                                                                                vv day month year vv                                                                                 vv month year vv day month year vv                                                          
     date_match = re.search(r'(?:(?:January|February|March|April|May|June|July|August|September|October|November|December|\d{1,2})\s+\d{1,2},?\s+\d{4})|(?:\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})|(?:January|February|March|April|May|June|July|August|September|October|November|December),?\s+\d{4}', str(text), re.IGNORECASE)
     if date_match:     
@@ -228,15 +231,48 @@ def extract_summary_from_text(text):
         day = day.zfill(2)
         
         summary['date'] = f"{year}-{month}-{day}"
-    '''else:
-        summary['date'] = "NODATEFOUND'''
+
         
     # Extract publisher using regex
-    news_match = re.search(r'(?:article|news|newspaper|paper|press|journal)\s+(?:\w+\s+)*(?:times|post|today|day|tribune|globe|news|newspaper|paper|press|journal)', str(text), re.IGNORECASE)
+    news_match = re.search(r'(?:\b(?:article|news|newspaper|paper|press|journal)\b\s+(?:[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*))|(?:\b(?:THE|A|AN)?\s*[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*(?:\s+NEWSPAPER)?\b)', str(text), re.IGNORECASE)  #re.search(r'(?:article|news|newspaper|paper|press|journal|collegian)\s+(?:\w+\s+)*(?:times|post|today|day|tribune|globe|news|newspaper|paper|press|journal|collegian)', str(text), re.IGNORECASE) 
     if news_match:
         summary['publisher'] = news_match.group()
 
     return summary
+
+def SummaryEnchanced(text):
+    #combines the abstractive summary with the keywords found. Should boost overall success rate
+    extract_summary = Asummarize_text(text)  # Abstractive
+    keywords = extract_keywords(text, n=5)    # Extractive keywords
+
+    # Combine extractive summary with keywords
+    combined_summary = extract_summary + " " + " ".join(keywords)
+    
+    return combined_summary
+
+def generate_filename(summary, final_summary):
+    new_file_name = ""
+    
+    # Add date to the filename if it exists
+    if 'date' in summary:
+        new_file_name += summary['date'] + "_"
+    
+    # Add publisher to the filename if it exists
+    if 'publisher' in summary:
+        new_file_name += summary['publisher'] + "_"
+
+    # Add keywords extracted from the final summary
+    keywords = extract_keywords(final_summary)
+    for keyword in keywords:
+        new_file_name += keyword + "-"
+        
+    # replace spaces with - and remove any special symbols
+    new_file_name = new_file_name.replace("\n","_")
+    new_file_name = new_file_name.replace("__","_")
+    new_file_name = re.sub(r'[<>:"/\\|?*]', '_', new_file_name)
+
+    return new_file_name.rstrip('-')  # Remove any trailing dash
+
 
 def read_text_file_and_rename_image(text_file_path):
     # returns new_filename, txt_file at the iteration, and text summary. 
@@ -273,7 +309,6 @@ def read_text_file_and_rename_image(text_file_path):
                         else:
                             #print("No publisher found for file name in line:\n\t", line)
                             continue
-                        
                     else:
                         #print("No date found for file name in line:\n\t", line)
                         continue
@@ -291,15 +326,17 @@ def read_text_file_and_rename_image(text_file_path):
             
             # aText = Asummarize_text(text)
             if(contains_only_stop_words(text)):
-                # Text has only stop words. mark it for removeal
+                # Text has only stop words. mark it for removal
                 new_file_name = new_file_name[:0] + '_' + new_file_name[0:]
                 return new_file_name, file_name, text
             
-            extr_aText = extract_keywords(Asummarize_text(text))
+            extr_aText = extract_keywords(Asummarize_text(text)) #old method only uses the keywords found and not the summary with keywords
+            #extr_aText = SummaryEnchanced(text) #? 48.8% success rate but needs tunning
             
-            # print("Summarized using abtract: \n",aText)   #give summarize of text
-            # print("Extracted words from asum: \n",extr_aText) #gathers 15 keywords
-            # print("\nNew File name 1: ",new_file_name)
+            #print("Summarized using abtract: \n",Asummarize_text(text))   #give summarize of text
+            #print("Extracted words from asum: \n",extr_aText) #gathers 15 keywords
+            #print("\nNew File name 1: ",new_file_name)
+            #input("pause: ")
             
             for i in extr_aText:
                 new_file_name += i + "-"
@@ -316,7 +353,8 @@ def read_text_file_and_rename_image(text_file_path):
             #completedArry[file_name] = [new_file_name, file_name, text]
             completed_files.append(file_name)
             
-            #*mark the file to remove
+            #*mark the file to remove if the first character is a not a digit 
+            #   or the first 11 characters are NODATEFOUND #or not new_file_name[:11] == "NODATEFOUND"
             if(not new_file_name[0].isdigit()):
                 new_file_name = new_file_name[:0] + '_' + new_file_name[0:]
             
@@ -327,6 +365,36 @@ def read_text_file_and_rename_image(text_file_path):
         #return completedArry # Return the new file, text_file location, and text gathered. 
 
     return "", "", ""  # Return empty strings if no text files were found
+    
+'''def read_text_file_and_rename_image(text_file_path):
+    for file_name in os.listdir(text_file_path):
+        if file_name.endswith(".txt") and file_name not in completed_files:
+            file_path = os.path.join(text_file_path, file_name)
+            with open(file_path, 'r') as text_file:
+                text = text_file.read()
+
+            summary = extract_summary_from_text(text)
+            initial_summary = Asummarize_text(text)
+            contextual_summary = SummaryEnchanced(text)
+
+            # Combine summaries or use one as needed
+            final_summary = contextual_summary  # or combine both
+            
+            # Use one of the summaries or combine them
+            if contextual_summary:
+                final_summary = contextual_summary
+            else:
+                final_summary = initial_summary  # Fallback to the initial summary
+
+            new_file_name = generate_filename(summary,final_summary)
+
+            # Process the file based on the new filename
+            # Move or save the file with new_file_name
+            completed_files.append(file_name)
+
+            return new_file_name, file_name, text
+
+    return "", "", ""'''
 
 if __name__ == "__main__":
     input_folder = ".\\unnamed_file\\Textfiles"
