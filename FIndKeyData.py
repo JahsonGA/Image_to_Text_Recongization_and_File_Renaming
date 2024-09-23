@@ -6,6 +6,7 @@ from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer
 from nltk import sent_tokenize
 from nltk import ngrams
+from nltk.corpus import words
 from collections import Counter
 import shutil as sh
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -16,6 +17,32 @@ import numpy as np
 completed_files = []
 completedCount = 0
 manualCount = 0
+# Get the list of valid English words
+word_list = set(words.words())
+
+# Helper function to segment concatenated words
+def word_segmenter(text, word_list):
+    segmented_words = []
+    
+    # Recursive function to break words
+    def segment(text, segmented):
+        if not text:
+            return segmented
+        
+        # Try all possible splits and recurse
+        for i in range(1, len(text) + 1):
+            prefix = text[:i]
+            if prefix in word_list:
+                result = segment(text[i:], segmented + [prefix])
+                if result:
+                    return result
+        return None
+    
+    result = segment(text.lower(), [])
+    if result:
+        return ' '.join(result)
+    else:
+        return ""
 
 # Function to extract keywords from text
 # n is the number of keywords should be taken from passage
@@ -48,13 +75,6 @@ def extract_keywords(text, n=10):
 # Function to move files based on keywords
 def move_files(input_folder, output_folder, manual_review_folder, image_folder):
     global completedCount, manualCount
-    #failed attempt to get move function to work correctly
-    #cwd = os.getcwd()  # Get the current working directory (cwd)
-    #files = os.listdir(cwd)  # Get all the files in that directory
-    #print("Files in %r: %s" % (cwd, files))
-    #input_folder = cwd + input_folder
-    #output_folder = cwd + output_folder
-    #manual_review_folder = cwd + manual_review_folder
     
     count = 0
     for image_name in os.listdir(image_folder):
@@ -69,6 +89,7 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
             # print("Iteration: ", count+1)
             if  new_filename != '' and new_filename[0] != '_':  # if the newfile name doesn't exist then more the file into the manual review folder
                 new_filename = new_filename + ".tif"
+                #new_filename = word_segmenter(new_filename, word_list)
                 new_filepath = os.path.normpath(os.path.join(output_folder, new_filename))
                 sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(new_filepath))
                 #print("Scr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(new_filepath))
@@ -234,7 +255,7 @@ def extract_summary_from_text(text):
 
         
     # Extract publisher using regex
-    news_match = re.search(r'(?:\b(?:article|news|newspaper|paper|press|journal)\b\s+(?:[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*))|(?:\b(?:THE|A|AN)?\s*[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*(?:\s+NEWSPAPER)?\b)', str(text), re.IGNORECASE)  #re.search(r'(?:article|news|newspaper|paper|press|journal|collegian)\s+(?:\w+\s+)*(?:times|post|today|day|tribune|globe|news|newspaper|paper|press|journal|collegian)', str(text), re.IGNORECASE) 
+    news_match = re.search(r'(?:article|news|newspaper|paper|press|journal|collegian)\s+(?:\w+\s+)*(?:times|post|today|day|tribune|globe|news|newspaper|paper|press|journal|collegian)', str(text), re.IGNORECASE)#re.search(r'(?:\b(?:article|news|newspaper|paper|press|journal)\b\s+(?:[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*))|(?:\b(?:THE|A|AN)?\s*[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*(?:\s+NEWSPAPER)?\b)', str(text), re.IGNORECASE)   
     if news_match:
         summary['publisher'] = news_match.group()
 
@@ -242,8 +263,8 @@ def extract_summary_from_text(text):
 
 def SummaryEnchanced(text):
     #combines the abstractive summary with the keywords found. Should boost overall success rate
-    extract_summary = Asummarize_text(text)  # Abstractive
-    keywords = extract_keywords(text, n=5)    # Extractive keywords
+    extract_summary = Asummarize_text(text)     # Abstractive
+    keywords = extract_keywords(text, n=5)      # Extractive keywords
 
     # Combine extractive summary with keywords
     combined_summary = extract_summary + " " + " ".join(keywords)
@@ -267,14 +288,14 @@ def generate_filename(summary, final_summary):
         new_file_name += keyword + "-"
         
     # replace spaces with - and remove any special symbols
-    new_file_name = new_file_name.replace("\n","_")
-    new_file_name = new_file_name.replace("__","_")
     new_file_name = re.sub(r'[<>:"/\\|?*]', '_', new_file_name)
+    new_file_name = new_file_name.replace('\n', '').replace('-', '')
+    new_file_name = new_file_name[:100] #trim to 100 characters
 
     return new_file_name.rstrip('-')  # Remove any trailing dash
 
 
-def read_text_file_and_rename_image(text_file_path):
+'''def read_text_file_and_rename_image(text_file_path):
     # returns new_filename, txt_file at the iteration, and text summary. 
     # Read text from the text file line by line
     # There was an error where it would read the whole text file as one string without \n characters.
@@ -328,10 +349,15 @@ def read_text_file_and_rename_image(text_file_path):
             if(contains_only_stop_words(text)):
                 # Text has only stop words. mark it for removal
                 new_file_name = new_file_name[:0] + '_' + new_file_name[0:]
+                
+                # removes illegal characters
+                new_file_name = re.sub(r'[<>:"/\\|?*\n]', '_', new_file_name)
+                new_file_name = new_file_name.replace('\n', '').replace('-', '')
+                new_file_name = new_file_name[:100] #trim to 100 characters
                 return new_file_name, file_name, text
             
-            extr_aText = extract_keywords(Asummarize_text(text)) #old method only uses the keywords found and not the summary with keywords
-            #extr_aText = SummaryEnchanced(text) #? 48.8% success rate but needs tunning
+            #extr_aText = extract_keywords(Asummarize_text(text)) #old method only uses the keywords found and not the summary with keywords
+            extr_aText = SummaryEnchanced(text) #? 48.8% success rate but needs tunning
             
             #print("Summarized using abtract: \n",Asummarize_text(text))   #give summarize of text
             #print("Extracted words from asum: \n",extr_aText) #gathers 15 keywords
@@ -357,16 +383,19 @@ def read_text_file_and_rename_image(text_file_path):
             #   or the first 11 characters are NODATEFOUND #or not new_file_name[:11] == "NODATEFOUND"
             if(not new_file_name[0].isdigit()):
                 new_file_name = new_file_name[:0] + '_' + new_file_name[0:]
-            
-            return new_file_name, file_name, text # Return the new file, text_file location, and text gathered. 
+                
+            new_file_name = re.sub(r'[<>:"/\\|?*\n]', '_', new_file_name)       # removes illegal characters
+            new_file_name = new_file_name.replace('\n', '').replace('-', '')
+            new_file_name = new_file_name[:100]         #trim to 100 characters
+            return new_file_name, file_name, text       # Return the new file, text_file location, and text gathered. 
             # What if there is a global variable to count the number of files read in the folder.
             # It worked
             
         #return completedArry # Return the new file, text_file location, and text gathered. 
 
-    return "", "", ""  # Return empty strings if no text files were found
+    return "", "", ""  # Return empty strings if no text files were found'''
     
-'''def read_text_file_and_rename_image(text_file_path):
+def read_text_file_and_rename_image(text_file_path):
     for file_name in os.listdir(text_file_path):
         if file_name.endswith(".txt") and file_name not in completed_files:
             file_path = os.path.join(text_file_path, file_name)
@@ -394,7 +423,7 @@ def read_text_file_and_rename_image(text_file_path):
 
             return new_file_name, file_name, text
 
-    return "", "", ""'''
+    return "", "", ""
 
 if __name__ == "__main__":
     input_folder = ".\\unnamed_file\\Textfiles"

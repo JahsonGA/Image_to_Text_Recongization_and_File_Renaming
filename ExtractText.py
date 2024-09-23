@@ -261,7 +261,7 @@ def preprocess_for_ocr(image):
     #* increased matrix to 11x11 from 9x9
     #!  results in 40.2% 37/55
     #* increased matrix to 10x10 from 9x9
-    #!  faild to complie, must be odd matrix
+    #!  failed to complie, must be odd matrix
     
     #OTSU's Thresholding
     ret3, th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY + cv2.THRESH_OTSU)
