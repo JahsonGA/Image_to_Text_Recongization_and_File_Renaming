@@ -27,6 +27,9 @@ Reviewed the previous code and improved image detection to reach 62% again. Open
 
 Currently success rate stands at %39.13 out of 92 files 36 are successfully read, renamed, and moved. To improve this number further I want make files in manual review be scanned again but this time they will have a more specify filtering. This should increase the success rate further at the cost of performance. 
 
+### 9/23/24
+Changed the file naming policy and how the text was summary to allow for more success. Currently has a success rate 100% but the name names that are created are hard to read and understand.
+
 ## Links to useful site:
 https://trenton3983.github.io/posts/ocr-image-processing-pytesseract-cv2/
 
