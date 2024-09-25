@@ -30,6 +30,9 @@ Currently success rate stands at %39.13 out of 92 files 36 are successfully read
 ### 9/23/24
 Changed the file naming policy and how the text was summary to allow for more success. Currently has a success rate 100% but the name names that are created are hard to read and understand.
 
+### 9/25/24
+Reworked the file naming to show the date formatted correctly. 
+
 ## Links to useful site:
 https://trenton3983.github.io/posts/ocr-image-processing-pytesseract-cv2/
 
