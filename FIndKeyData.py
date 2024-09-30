@@ -8,6 +8,7 @@ from nltk import sent_tokenize
 from nltk import ngrams
 from nltk.corpus import words
 from collections import Counter
+from datetime import datetime
 import shutil as sh
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -21,28 +22,49 @@ manualCount = 0
 word_list = set(words.words())
 
 # Helper function to segment concatenated words
-def word_segmenter(text, word_list):
-    segmented_words = []
+def word_segmenter(fileName, word_list):
+    n = len(fileName)                   #length of fileName
+    dp = [None] * (n+1)                 #defines the array size
+    dp[0] = []                          #Base case: empty string can be segmented into an empty list of words
+    new_fileName = fileName[:8]         #gets the first 8 characters which should hold dates
+    fileName = fileName[8:]             #removes the first 8 characters
+    #print(word_list)
     
-    # Recursive function to break words
-    def segment(text, segmented):
-        if not text:
-            return segmented
+    # missing date
+    if(new_fileName.isdigit()):
+        if (new_fileName[:-2] == "00"):
+            # missing month
+            if (new_fileName[:-4] == "0000"):
+                #only year found. Store the first 4 characters 
+                new_fileName = new_fileName[:4] + "_" + new_fileName[4:6] + "_" + new_fileName[6:8]
+            
+            #date month and year found. store first 8 characters
+            else:
+                new_fileName = new_fileName[:2] + "_" + new_fileName[2:4] + "_" + new_fileName[4:8]
         
-        # Try all possible splits and recurse
-        for i in range(1, len(text) + 1):
-            prefix = text[:i]
-            if prefix in word_list:
-                result = segment(text[i:], segmented + [prefix])
-                if result:
-                    return result
-        return None
+        #month and year found. store first 6 characters
+        else:
+            new_fileName = new_fileName[:2] + "_" + new_fileName[2:6] + "_" + new_fileName[6:]
+
+    # Iterate over the string and segment it based on word_list
+    for i in range(1, n + 1):
+        for j in range(i):
+            word = fileName[j:i]
+            if word in word_list and dp[j] is not None:
+                dp[i] = dp[j] + [word]
+                break
     
-    result = segment(text.lower(), [])
-    if result:
-        return ' '.join(result)
+    # Return the segmented words if possible, otherwise return an empty string
+    if dp[-1] is not None: 
+        # Ensure correct formatting with underscores between words
+        segmented_words = '_'.join(dp[-1])
+        new_fileName += '_' + segmented_words
     else:
-        return ""
+        new_fileName += fileName
+        
+    new_fileName = new_fileName.replace(" ","_")
+    
+    return new_fileName
 
 # Function to extract keywords from text
 # n is the number of keywords should be taken from passage
@@ -86,10 +108,10 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
         new_filename, txt_file, text = read_text_file_and_rename_image(input_folder)
     
         if image_name.endswith(".tif"):
-            # print("Iteration: ", count+1)
+            #print("Iteration: ", count+1)
             if  new_filename != '' and new_filename[0] != '_':  # if the newfile name doesn't exist then more the file into the manual review folder
                 new_filename = new_filename + ".tif"
-                #new_filename = word_segmenter(new_filename, word_list)
+                new_filename = word_segmenter(new_filename, word_list)
                 new_filepath = os.path.normpath(os.path.join(output_folder, new_filename))
                 sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(new_filepath))
                 #print("Scr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(new_filepath))
@@ -98,8 +120,9 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
                 sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(os.path.join(manual_review_folder,image_name)))
                 #print("Manual\nScr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(os.path.join(manual_review_folder,image_name)))
                 manualCount += 1
-                
-            os.remove(os.path.normpath(os.path.join(input_folder, txt_file)))
+            
+            #? this line will have to be put in the FileOrg file
+            #os.remove(os.path.normpath(os.path.join(input_folder, txt_file)))
         count += 1
         
 #*Compared to online summarizer
@@ -289,7 +312,7 @@ def generate_filename(summary, final_summary):
         
     # replace spaces with - and remove any special symbols
     new_file_name = re.sub(r'[<>:"/\\|?*]', '_', new_file_name)
-    new_file_name = new_file_name.replace('\n', '').replace('-', '')
+    new_file_name = new_file_name.replace('\n', '')#.replace('-', '')
     new_file_name = new_file_name[:100] #trim to 100 characters
 
     return new_file_name.rstrip('-')  # Remove any trailing dash
@@ -432,10 +455,5 @@ if __name__ == "__main__":
     manual_review_folder = ".\\manual_review_images"
     # Move files based on keywords
     move_files(input_folder, output_folder, manual_review_folder, image_folder)
-    # read_text_file_and_rename_image(input_folder)
-    # read_text_file_and_rename_image(input_folder)
-    # read_text_file_and_rename_image(input_folder)
     print("Success: ", completedCount, "Fail: ", manualCount)
     print("Success Rate: ", (completedCount / (completedCount + manualCount)) * 100)
-    
-    #TODO current idea is to use EAST ML method to find text in an image and then send the information found to a text file.
