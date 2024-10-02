@@ -2,9 +2,10 @@
 import csv
 from datetime import datetime
 import os
+import FindKeyData
 
 # Function to append file data to CSV
-def write_to_csv(file_name, article_date, description, tags, csv_file='file_metadata.csv'):
+def write_to_csv(file_name, article_date, description, tags, csv_file='PennTAP_History_1971-1973.csv'):
     # Get the current date as the upload date
     date_uploaded = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -22,17 +23,18 @@ def add_file_details(image_folder,textfolder):
     try:
         for file in os.listdir(image_folder):
             file_name = file
-            article_date = file[:8]
+            article_date = file[:10] 
             
-            
-            
+            if(not article_date[0].isdigit()):
+                article_date = "NoDateFound"
 
-        # Prompt for details (once for all files)
-        description = input("Enter a brief description for all files: ")
-        tags = input("Enter tags (comma separated) for all files: ")
+            # Prompt for details (once for all files)
+            _, _, text = FindKeyData.read_text_file_and_rename_image(textfolder)
+            description = text                                  #get data from text detection
+            tags = file[11:] if len(file) > 8 else "No Tags"    #if not enough tags exist make it as so
+            tags = tags.replace(".tif", "")
         
-        # Write each file's details to the CSV
-        for file_name in files:
+            # Write each file's details to the CSV
             file_path = os.path.join(folder_path, file_name)
             write_to_csv(file_path, article_date, description, tags)
     
@@ -40,7 +42,7 @@ def add_file_details(image_folder,textfolder):
         print(f"Error: Folder '{folder_path}' not found.")
 
 # Ensure the CSV has a header if the file is newly created
-def initialize_csv(csv_file='file_metadata.csv'):
+def initialize_csv(csv_file='PennTAP_History_1971-1973.csv'):
     try:
         # Check if file exists, if not create with headers
         with open(csv_file, mode='r') as file:
@@ -52,11 +54,13 @@ def initialize_csv(csv_file='file_metadata.csv'):
             writer.writerow(["File Name", "Date Uploaded", "Date of Article", "Description", "Tags"])
         print(f"Created new CSV file '{csv_file}' with headers.")
 
-# Initialize the CSV file with headers (run only once)
-initialize_csv()
-
-# Add file details
-add_file_details()
 if __name__ == "__main__":
     text_folder = ".\\unnamed_file\\Textfiles"
-    image_folder = ".\\unnamed_file"
+    image_folder = ".\\complete_images"
+    folder_path = "PennTAP_History_1971-1973.csv"
+    
+    # Initialize the CSV file with headers (run only once)
+    initialize_csv()
+
+    # Add file details
+    add_file_details(image_folder, text_folder)

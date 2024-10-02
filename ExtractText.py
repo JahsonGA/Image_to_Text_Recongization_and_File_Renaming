@@ -2,12 +2,9 @@ import pytesseract
 import numpy as np
 import cv2
 import os
-import tempfile
 
 # ML
 from imutils.object_detection import non_max_suppression
-import argparse
-import time
 
 # importing necessary functions from dotenv library
 from dotenv import load_dotenv, dotenv_values 

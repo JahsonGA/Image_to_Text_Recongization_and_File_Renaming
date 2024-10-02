@@ -33,6 +33,12 @@ Changed the file naming policy and how the text was summary to allow for more su
 ### 9/25/24
 Reworked the file naming to show the date formatted correctly. 
 
+### 10/2/24
+Created file naming and organization system. Each binder will have a .csv file be used to upload data to the sharepoint. 
+```write_to_csv function()```: Appends file information (file name, upload date, article date, description, and tags) to a specified CSV file. The upload date is generated at the time of execution.
+```add_file_details function()```: Iterates through image files in a specified folder, extracts the file name, article date (from the first 10 characters of the file name), and tags (from characters after the 11th position of the file name). It also retrieves text data from a text file through the FindKeyData.read_text_file_and_rename_image function. The file details are then written to the CSV.
+```initialize_csv function()```: Ensures that the CSV file has headers. If the file does not exist, it creates a new one with headers ("File Name", "Date Uploaded", "Date of Article", "Description", "Tags").
+
 ## Links to useful site:
 https://trenton3983.github.io/posts/ocr-image-processing-pytesseract-cv2/
 
