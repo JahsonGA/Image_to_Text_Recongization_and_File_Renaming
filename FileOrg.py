@@ -16,11 +16,11 @@ def write_to_csv(file_name, article_date, description, tags, csv_file='PennTAP_H
         # Write the row to the CSV file
         writer.writerow([file_name, date_uploaded, article_date, description, tags])
     
-    print(f"File '{file_name}' has been added to {csv_file}.")
+    #print(f"File '{file_name}' has been added to {csv_file}.")
 
 # Function to prompt user for input and add the file details to the CSV
 def add_file_details(image_folder,textfolder):
-    try:
+    #try:
         for file in os.listdir(image_folder):
             file_name = file
             article_date = file[:10] 
@@ -29,17 +29,21 @@ def add_file_details(image_folder,textfolder):
                 article_date = "NoDateFound"
 
             # Prompt for details (once for all files)
-            _, _, text = FindKeyData.read_text_file_and_rename_image(textfolder)
-            description = text                                  #get data from text detection
             tags = file[11:] if len(file) > 8 else "No Tags"    #if not enough tags exist make it as so
             tags = tags.replace(".tif", "")
         
             # Write each file's details to the CSV
             file_path = os.path.join(folder_path, file_name)
+            
+            # Get data about file description
+            _, txt_file, text = FindKeyData.read_text_file_and_rename_image(textfolder)
+            description = text.replace(",","").replace("\n","")  #get data from text detection
+            
+            os.remove(os.path.normpath(os.path.join(textfolder, txt_file)))
             write_to_csv(file_path, article_date, description, tags)
-    
-    except FileNotFoundError:
-        print(f"Error: Folder '{folder_path}' not found.")
+            
+    #except FileNotFoundError:
+    #    print(f"Error: Folder '{folder_path}' not found.")
 
 # Ensure the CSV has a header if the file is newly created
 def initialize_csv(csv_file='PennTAP_History_1971-1973.csv'):
@@ -52,7 +56,7 @@ def initialize_csv(csv_file='PennTAP_History_1971-1973.csv'):
             writer = csv.writer(file)
             # Write the header row
             writer.writerow(["File Name", "Date Uploaded", "Date of Article", "Description", "Tags"])
-        print(f"Created new CSV file '{csv_file}' with headers.")
+        #print(f"Created new CSV file '{csv_file}' with headers.")
 
 if __name__ == "__main__":
     text_folder = ".\\unnamed_file\\Textfiles"

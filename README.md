@@ -39,6 +39,9 @@ Created file naming and organization system. Each binder will have a .csv file b
 ```add_file_details function()```: Iterates through image files in a specified folder, extracts the file name, article date (from the first 10 characters of the file name), and tags (from characters after the 11th position of the file name). It also retrieves text data from a text file through the FindKeyData.read_text_file_and_rename_image function. The file details are then written to the CSV.
 ```initialize_csv function()```: Ensures that the CSV file has headers. If the file does not exist, it creates a new one with headers ("File Name", "Date Uploaded", "Date of Article", "Description", "Tags").
 
+### 10/9/24
+Files how are scanned for data, summarized, renamed, moved, and .csv file is updated to hold the data. Working on script to scanning read in download and move files scanned from the printer and sent to self. Afterwards all that is left is to speak with Tanna about running the software and what needs to be checked by IT.
+
 ## Links to useful site:
 https://trenton3983.github.io/posts/ocr-image-processing-pytesseract-cv2/
 
