@@ -13,6 +13,9 @@ load_dotenv()
 
 model = os.getenv("model")
 path = os.getenv("path")
+package = os.getenv("package")
+
+print(f"Tesseract Path from .env: {path}\n\n")
 
 #! BEFORE made public hide file path!
 #TODO hide true path

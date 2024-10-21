@@ -42,8 +42,11 @@ Created file naming and organization system. Each binder will have a .csv file b
 ### 10/9/24
 Files how are scanned for data, summarized, renamed, moved, and .csv file is updated to hold the data. Working on script to scanning read in download and move files scanned from the printer and sent to self. Afterwards all that is left is to speak with Tanna about running the software and what needs to be checked by IT.
 
+### 10/21/24
+Switched to working on VBA script and successfully got it working. Now I am preparing the scripts and the file types to be used automatically. 
+
 ## Links to useful site:
-https://trenton3983.github.io/posts/ocr-image-processing-pytesseract-cv2/
+https://trenton3983.github.io/posts/ocr-ima ge-processing-pytesseract-cv2/
 
 
 ## Installation
@@ -194,6 +197,9 @@ The `extract_keywords_from_text` function given a summarized text file, the func
 the `read_text_file_and_rename_image` function given a text file path, returns new_filename, txt_file at the iteration, and text summary. Read text from the text file line by line and run `Asummarize_text` to build the summary. Construct a new file name based on the summary: If there is a date in the summary add to the file name
 If there is a publisher in the summary add it file name
 If there is already a date in the file name then skip it
+
+## FileOrg
+Uses the key data gathered above to create a csv file to be uploaded to Excel for organization. 
 
 
 # Resourced Used
