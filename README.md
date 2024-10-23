@@ -45,6 +45,9 @@ Files how are scanned for data, summarized, renamed, moved, and .csv file is upd
 ### 10/21/24
 Switched to working on VBA script and successfully got it working. Now I am preparing the scripts and the file types to be used automatically. 
 
+### 10/23/24
+Starting downloading packages to run the code on the office machine. 
+
 ## Links to useful site:
 https://trenton3983.github.io/posts/ocr-ima ge-processing-pytesseract-cv2/
 
