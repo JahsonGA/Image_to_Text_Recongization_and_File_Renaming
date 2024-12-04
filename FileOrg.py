@@ -19,7 +19,7 @@ def write_to_csv(file_name, article_date, description, tags, csv_file='PennTAP_H
     #print(f"File '{file_name}' has been added to {csv_file}.")
 
 # Function to prompt user for input and add the file details to the CSV
-def add_file_details(image_folder,textfolder):
+def add_file_details(image_folder,textfolder,folder_path):
     #try:
         for file in os.listdir(image_folder):
             file_name = file
@@ -39,7 +39,18 @@ def add_file_details(image_folder,textfolder):
             _, txt_file, text = FindKeyData.read_text_file_and_rename_image(textfolder)
             description = text.replace(",","").replace("\n","")  #get data from text detection
             
-            os.remove(os.path.normpath(os.path.join(textfolder, txt_file)))
+            # Remove the text file after processing
+            txt_file_path = os.path.normpath(os.path.join(textfolder, txt_file))
+            if os.path.isfile(txt_file_path):
+                try:
+                    os.remove(txt_file_path)
+                except PermissionError as e:
+                    print(f"Permission error: {e}. Skipping file: {txt_file_path}")
+                except Exception as e:
+                    print(f"Error: {e}. Skipping file: {txt_file_path}")
+            else:
+                print(f"Not a file: {txt_file_path}")
+                
             write_to_csv(file_path, article_date, description, tags)
             
     #except FileNotFoundError:
@@ -67,4 +78,4 @@ if __name__ == "__main__":
     initialize_csv()
 
     # Add file details
-    add_file_details(image_folder, text_folder)
+    add_file_details(image_folder, text_folder, folder_path)

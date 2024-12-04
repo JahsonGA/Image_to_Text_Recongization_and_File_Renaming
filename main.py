@@ -29,12 +29,12 @@ FindKeyData.move_files(input_folder, output_folder, manual_review_folder, image_
 
 text_folder = ".\\unnamed_file\\Textfiles"
 image_folder = ".\\complete_images"
-folder_path = "PennTAP_History_1971-1973.csv"
+folder_path = "PennTAP_History_1973-1975.csv"
 
 # Initialize the CSV file with headers (run only once)
 FileOrg.initialize_csv()
 
 # Add file details
-FileOrg.add_file_details(image_folder, text_folder)
+FileOrg.add_file_details(image_folder, text_folder, folder_path)
 
 print("Made it to the end")

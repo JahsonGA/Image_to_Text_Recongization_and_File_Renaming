@@ -8,7 +8,6 @@ from nltk import sent_tokenize
 from nltk import ngrams
 from nltk.corpus import words
 from collections import Counter
-from datetime import datetime
 import shutil as sh
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -19,7 +18,7 @@ completed_files = []
 completedCount = 0
 manualCount = 0
 # Get the list of valid English words
-word_list = set(words.words())
+word_list = words.words()
 
 # Helper function to segment concatenated words
 def word_segmenter(fileName, word_list):
@@ -199,6 +198,10 @@ def contains_only_stop_words(text):
 def Asummarize_text(text):
     # Tokenize the text into sentences
     sentences = sent_tokenize(text)
+    
+    # Check if the sentences contain meaningful content
+    if not sentences or all(contains_only_stop_words(sentence) for sentence in sentences):
+        return "Text does not contain enough meaningful content for summarization."
 
     # Check if the text contains enough non-stop words for summarization
     #non_stop_words_exist = any(word not in stopwords.words('english') for word in word_tokenize(text))
@@ -210,9 +213,12 @@ def Asummarize_text(text):
     #Term Frequency-Inverse document Frequency
     vectorizer = TfidfVectorizer(stop_words='english')
 
-    # Calculate the TF-IDF matrix
-    tfidf_matrix = vectorizer.fit_transform(sentences)
-
+    try:
+        # Calculate the TF-IDF matrix
+        tfidf_matrix = vectorizer.fit_transform(sentences)
+    except ValueError:
+        return "Failed to create TF-IDF matrix; input text might be empty or invalid."
+    
     # Calculate the pairwise cosine similarity
     cosine_similarities = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
@@ -424,6 +430,10 @@ def read_text_file_and_rename_image(text_file_path):
             file_path = os.path.join(text_file_path, file_name)
             with open(file_path, 'r') as text_file:
                 text = text_file.read()
+                
+            if contains_only_stop_words(text):
+                print("File contains only stop words. Skipping summarization.")
+                return "Stop words only", file_name, text
 
             summary = extract_summary_from_text(text)
             initial_summary = Asummarize_text(text)

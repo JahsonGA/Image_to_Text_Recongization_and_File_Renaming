@@ -2,6 +2,7 @@ import pytesseract
 import numpy as np
 import cv2
 import os
+from PIL import Image, TiffImagePlugin, UnidentifiedImageError
 
 # ML
 from imutils.object_detection import non_max_suppression
@@ -152,9 +153,35 @@ def preprocess_for_ocr(image):
     #returns smoothed image
     return th3
 
+def process_tiff_pages(image_path):
+    images = []
+    try:
+        with Image.open(image_path) as img:
+            for page in range(img.n_frames):  # Iterate through pages
+                img.seek(page)
+                if img.mode != 'RGB':  # Ensure the image is in RGB mode
+                    img = img.convert('RGB')
+                # Convert to OpenCV format for further processing
+                cv_image = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+                images.append(cv_image)
+    except UnidentifiedImageError as e:  # Handle errors specific to PIL
+        print(f"Error reading TIFF: {image_path} - {e}")
+    except Exception as e:  # Handle unexpected errors
+        print(f"Unexpected error with {image_path}: {e}")
+    return images
+
+def preprocess_multi_page_tiff(image_path):
+    images = process_tiff_pages(image_path)
+    preprocessed_images = []
+    for img in images:
+        # Apply preprocessing (example uses preprocessing function)
+        processed = remove_noise_and_smooth(img)  # Replace with any preprocessing function
+        preprocessed_images.append(processed)
+    return preprocessed_images
+
 # Extract text found in the image and write to a text file
 def extract_text_from_folder(input, output):
-    # Iterate over all files in the image folder
+    '''# Iterate over all files in the image folder
     for file_name in os.listdir(input):
         # Check if the file is a TIFF image
         if file_name.endswith(".tif"):
@@ -164,7 +191,8 @@ def extract_text_from_folder(input, output):
             # Perform OCR using pytesseract
             #? newest image dection and smoothing
             image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-            img = remove_noise_and_smooth(image)          # %42.2
+            img = preprocess_multi_page_tiff(image)
+            # img = remove_noise_and_smooth(image)          # %42.2
             
             #* NOTE proprocessing2 the blue needs uncommenting before other test
             text = pytesseract.image_to_string(img) #needed for preprocessing 
@@ -178,7 +206,35 @@ def extract_text_from_folder(input, output):
             text_file_path = os.path.join(output, text_file_name)
             # Write the extracted text to the text file
             with open(text_file_path, 'w') as text_file:
-                text_file.write(text)
+                text_file.write(text)'''
+     # Iterate over all files in the input folder
+    for file_name in os.listdir(input):
+        # Construct the full path to the file
+        image_path = os.path.join(input, file_name)
+
+        # Check if the file is a TIFF image
+        if file_name.endswith(".tif"):
+            print(f"Processing TIFF file: {file_name}")
+            # Preprocess multi-page TIFF
+            preprocessed_images = preprocess_multi_page_tiff(image_path)
+
+            # Initialize a variable to store the full text for the file
+            full_text = ""
+
+            # Process each page
+            for page_index, preprocessed_image in enumerate(preprocessed_images):
+                # Perform OCR on the preprocessed image
+                text = pytesseract.image_to_string(preprocessed_image)
+                full_text += f"\n--- Page {page_index + 1} ---\n{text}"
+
+            # Write the extracted text to a text file
+            text_file_name = os.path.splitext(file_name)[0] + ".txt"
+            text_file_path = os.path.join(output, text_file_name)
+            with open(text_file_path, 'w') as text_file:
+                text_file.write(full_text)
+        
+        else:
+            print(f"Skipping unsupported file: {file_name}")
                 
 if __name__ == "__main__":
     input = ".\\unnamed_file"
