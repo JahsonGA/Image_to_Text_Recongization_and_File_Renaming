@@ -1,0 +1,81 @@
+Sub ProcessMessagesInFolder()
+    Dim objNamespace As Outlook.NameSpace
+    Dim objFolder As Outlook.MAPIFolder
+    Dim objMail As Outlook.MailItem
+    Dim objAttachments As Outlook.Attachments
+    Dim strFile As String
+    Dim strFolderpath As String
+    Dim FS As Object
+    Dim lngCount As Long
+    Dim attachmentIndex As Long
+    Dim objItem As Object
+    Dim recipient As Outlook.recipient
+    Dim emailToYou As Boolean
+    Dim currentUser As String
+    
+    currentUser = Application.Session.currentUser.Address
+    
+    ' Set the folder to check
+    Set objNamespace = Application.GetNamespace("MAPI")
+    Set objFolder = objNamespace.Folders("jfg5801@psu.edu").Folders("Inbox").Folders("PennTAP History").Folders("1973_1975")
+    
+    ' Define folder path on the desktop
+    strFolderpath = CreateObject("WScript.Shell").SpecialFolders("Desktop") & "\1973-1975\unnamed_file\"
+    
+    ' Create FileSystemObject to check/create folder if necessary
+    Set FS = CreateObject("Scripting.FileSystemObject")
+    If Not FS.FolderExists(strFolderpath) Then
+        FS.CreateFolder strFolderpath
+    End If
+    
+    ' Loop through each item in the folder
+    For Each objItem In objFolder.Items
+    'MsgBox ("For loop")
+        ' Ensure the item is a mail item
+        If TypeOf objItem Is Outlook.MailItem Then
+            Set objMail = objItem
+            emailToYou = False
+            ' Check if the email is sent to you
+            For Each recipient In objMail.Recipients
+            'MsgBox ("For loop 2")
+                If recipient.Address = currentUser Then
+                    emailToYou = True
+                    'MsgBox ("To me")
+                    Exit For
+                End If
+            Next recipient
+            ' Check if the email meets the conditions
+            If emailToYou = True And _
+               LCase(objMail.SenderEmailAddress) = "ricohscanner@psu.edu" And _
+               objMail.Attachments.Count > 0 And _
+               objMail.UnRead = True Then
+               
+                ' Get email attachments and save them to the desktop
+                Set objAttachments = objMail.Attachments
+                lngCount = objAttachments.Count
+                If lngCount > 0 Then
+                    For attachmentIndex = 1 To lngCount
+                        strFile = objAttachments.Item(attachmentIndex).FileName
+                        ' Sanitize the file name
+                        strFile = Replace(strFile, ":", "_")
+                        strFile = Replace(strFile, "/", "_")
+                        strFile = strFolderpath & strFile
+                        objAttachments.Item(attachmentIndex).SaveAsFile strFile
+                        'MsgBox ("Saved file")
+                    Next attachmentIndex
+                End If
+                ' Mark the email as read
+                objMail.UnRead = False
+                objMail.Save ' Save changes to the mail item
+            End If
+        End If
+    Next objItem
+    ' Cleanup
+    Set objAttachments = Nothing
+    Set objMail = Nothing
+    Set objFolder = Nothing
+    Set objNamespace = Nothing
+    Set FS = Nothing
+    'MsgBox ("done")
+End Sub
+
