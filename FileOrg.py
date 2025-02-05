@@ -3,6 +3,9 @@ import csv
 from datetime import datetime
 import os
 import FindKeyData
+import ExtractText
+from ExtractText import process_tiff_pages, preprocess_multi_page_tiff
+from pytesseract import image_to_string
 
 # Function to append file data to CSV
 def write_to_csv(file_name, article_date, description, tags, csv_file='PennTAP_History_1971-1973.csv'):
@@ -20,7 +23,7 @@ def write_to_csv(file_name, article_date, description, tags, csv_file='PennTAP_H
 
 # Function to prompt user for input and add the file details to the CSV
 def add_file_details(image_folder,textfolder,folder_path):
-    #try:
+    try:
         for file in os.listdir(image_folder):
             file_name = file
             article_date = file[:10] 
@@ -31,6 +34,19 @@ def add_file_details(image_folder,textfolder,folder_path):
             # Prompt for details (once for all files)
             tags = file[11:] if len(file) > 8 else "No Tags"    #if not enough tags exist make it as so
             tags = tags.replace(".tif", "")
+            
+            # Process multi-page TIFF
+            images = ExtractText.process_tiff_pages(image_folder)
+            if not images:
+                print(f"No pages found in {image_folder}. Skipping.")
+                continue
+            
+            # Concatenate text from all pages
+            description = ""
+            for i in enumerate(images):
+                preprocessed_image = ExtractText.preprocess_multi_page_tiff(image_folder)[i]
+                page_text = image_to_string(preprocessed_image)
+                description += f"\nPage {i + 1}:\n{page_text.strip()}\n"
         
             # Write each file's details to the CSV
             file_path = os.path.join(folder_path, file_name)
@@ -52,9 +68,9 @@ def add_file_details(image_folder,textfolder,folder_path):
                 print(f"Not a file: {txt_file_path}")
                 
             write_to_csv(file_path, article_date, description, tags)
-            
-    #except FileNotFoundError:
-    #    print(f"Error: Folder '{folder_path}' not found.")
+    
+    except FileNotFoundError:
+        print(f"Error: Folder '{folder_path}' not found")
 
 # Ensure the CSV has a header if the file is newly created
 def initialize_csv(csv_file='PennTAP_History_1971-1973.csv'):
@@ -75,7 +91,7 @@ if __name__ == "__main__":
     folder_path = "PennTAP_History_1971-1973.csv"
     
     # Initialize the CSV file with headers (run only once)
-    initialize_csv()
+    initialize_csv(folder_path)
 
     # Add file details
     add_file_details(image_folder, text_folder, folder_path)

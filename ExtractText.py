@@ -164,6 +164,10 @@ def process_tiff_pages(image_path):
                 # Convert to OpenCV format for further processing
                 cv_image = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
                 images.append(cv_image)
+    except PermissionError as e:
+        print(f"Permission denied: {image_path} - {e}")
+    except FileNotFoundError as e:
+        print(f"Error reading TIFF: {image_path} - {e}")
     except UnidentifiedImageError as e:  # Handle errors specific to PIL
         print(f"Error reading TIFF: {image_path} - {e}")
     except Exception as e:  # Handle unexpected errors

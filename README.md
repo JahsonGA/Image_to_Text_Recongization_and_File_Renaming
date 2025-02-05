@@ -48,6 +48,17 @@ Switched to working on VBA script and successfully got it working. Now I am prep
 ### 10/23/24
 Starting downloading packages to run the code on the office machine. 
 
+### 10/28/24 to 12/9/24
+- Completed file upload for first binder.
+- Began work on second binder
+  - There is several photos with odd shapes or no text, changes need to be made in `FindKeyData.py and ExtractText.py`
+  - Multiple page scanning and filtering added. However `FileOrd.py` needs changes to handle multiple pages.
+
+### 1/22/25
+Idea: make a physical and digital list of step to run the code for when I graduate.
+Faxtool can be used to combine articles that were too large to scan over. 
+TODO: edit the error systax for better debugging and correction.
+
 ## Links to useful site:
 https://trenton3983.github.io/posts/ocr-ima ge-processing-pytesseract-cv2/
 
