@@ -59,6 +59,10 @@ Idea: make a physical and digital list of step to run the code for when I gradua
 Faxtool can be used to combine articles that were too large to scan over. 
 TODO: edit the error systax for better debugging and correction.
 
+### 3/26/25
+reestablishing quality back to how it was before. With the spacy package with the english model with the command:
+```python -m spacy download en```
+
 ## Links to useful site:
 https://trenton3983.github.io/posts/ocr-image-processing-pytesseract-cv2/
 
