@@ -60,7 +60,7 @@ Faxtool can be used to combine articles that were too large to scan over.
 TODO: edit the error systax for better debugging and correction.
 
 ## Links to useful site:
-https://trenton3983.github.io/posts/ocr-ima ge-processing-pytesseract-cv2/
+https://trenton3983.github.io/posts/ocr-image-processing-pytesseract-cv2/
 
 
 ## Installation

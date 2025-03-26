@@ -16,10 +16,11 @@ model = os.getenv("model")
 path = os.getenv("path")
 package = os.getenv("package")
 
-print(f"Tesseract Path from .env: {path}\n\n")
-
-#! BEFORE made public hide file path!
-#TODO hide true path
+"""
+#
+#           Replace what is between ' with the location of the tesseract.exe file
+#
+"""
 pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
 # Extract edges using Canny edge detection for feature extraction
@@ -165,13 +166,13 @@ def process_tiff_pages(image_path):
                 cv_image = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
                 images.append(cv_image)
     except PermissionError as e:
-        print(f"Permission denied: {image_path} - {e}")
+        print(f"Permission denied: {image_path} - {e}\n\n If the file is open, close it and try again.")
     except FileNotFoundError as e:
         print(f"Error reading TIFF: {image_path} - {e}")
     except UnidentifiedImageError as e:  # Handle errors specific to PIL
         print(f"Error reading TIFF: {image_path} - {e}")
     except Exception as e:  # Handle unexpected errors
-        print(f"Unexpected error with {image_path}: {e}")
+        print(f"Unexpected error with {image_path}\n No fix needed continuing: {e}")
     return images
 
 def preprocess_multi_page_tiff(image_path):
@@ -241,6 +242,6 @@ def extract_text_from_folder(input, output):
             print(f"Skipping unsupported file: {file_name}")
                 
 if __name__ == "__main__":
-    input = ".\\unnamed_file"
-    output = ".\\unnamed_file\\Textfiles"
+    input = ".\\PennTAP history\\unnamed_file"
+    output = ".\\PennTAP history\\unnamed_file\\Textfiles"
     extract_text_from_folder(input,output)

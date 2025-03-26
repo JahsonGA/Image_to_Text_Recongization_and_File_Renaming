@@ -110,13 +110,13 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
             #print("Iteration: ", count+1)
             if  new_filename != '' and new_filename[0] != '_':  # if the newfile name doesn't exist then more the file into the manual review folder
                 new_filename = new_filename + ".tif"
-                new_filename = word_segmenter(new_filename, word_list)
+                #new_filename = word_segmenter(new_filename, word_list)
                 new_filepath = os.path.normpath(os.path.join(output_folder, new_filename))
-                sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(new_filepath))
+                # sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(new_filepath))
                 #print("Scr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(new_filepath))
                 completedCount += 1
             else:
-                sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(os.path.join(manual_review_folder,image_name)))
+                # sh.move(os.path.normpath(os.path.join(image_folder,image_name)), os.path.normpath(os.path.join(manual_review_folder,image_name)))
                 #print("Manual\nScr: ", os.path.normpath(os.path.join(image_folder,image_name)), "\tDst: ", os.path.normpath(os.path.join(manual_review_folder,image_name)))
                 manualCount += 1
             
@@ -284,7 +284,7 @@ def extract_summary_from_text(text):
 
         
     # Extract publisher using regex
-    news_match = re.search(r'(?:article|news|newspaper|paper|press|journal|collegian)\s+(?:\w+\s+)*(?:times|post|today|day|tribune|globe|news|newspaper|paper|press|journal|collegian)', str(text), re.IGNORECASE)#re.search(r'(?:\b(?:article|news|newspaper|paper|press|journal)\b\s+(?:[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*))|(?:\b(?:THE|A|AN)?\s*[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*(?:\s+NEWSPAPER)?\b)', str(text), re.IGNORECASE)   
+    news_match = re.search(r'(?:\b(?:article|news|newspaper|paper|press|journal)\b\s+(?:[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*))|(?:\b(?:THE|A|AN)?\s*[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*(?:\s+NEWSPAPER)?\b)', str(text), re.IGNORECASE)
     if news_match:
         summary['publisher'] = news_match.group()
 
@@ -459,10 +459,10 @@ def read_text_file_and_rename_image(text_file_path):
     return "", "", ""
 
 if __name__ == "__main__":
-    input_folder = ".\\unnamed_file\\Textfiles"
-    image_folder = ".\\unnamed_file"
-    output_folder = ".\\complete_images"
-    manual_review_folder = ".\\manual_review_images"
+    input_folder = ".\\PennTAP history\\unnamed_file\\Textfiles"
+    image_folder = ".\\PennTAP history\\unnamed_file"
+    output_folder = ".\\PennTAP history\\complete_images"
+    manual_review_folder = ".\\PennTAP history\\manual_review_images"
     # Move files based on keywords
     move_files(input_folder, output_folder, manual_review_folder, image_folder)
     print("Success: ", completedCount, "Fail: ", manualCount)

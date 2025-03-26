@@ -34,7 +34,7 @@ image_folder = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTAP hi
 folder_path = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTAP_History_1973-1975.csv"
 
 # Initialize the CSV file with headers (run only once)
-FileOrg.initialize_csv()
+FileOrg.initialize_csv(folder_path)
 
 # Add file details
 FileOrg.add_file_details(image_folder, text_folder, folder_path)
