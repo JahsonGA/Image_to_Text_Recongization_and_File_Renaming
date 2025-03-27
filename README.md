@@ -115,6 +115,15 @@ pip install nms
 pip install imutils
 ```
 
+### spacy
+```
+pip install spacy
+```
+For the english model
+```
+python -m spacy download en
+```
+
 # Usage
 Use the `ExtractText.py` to gather the text and `FindKeyData.py` to filter the files based on the text of the extracted data.
 ## ExtractText
