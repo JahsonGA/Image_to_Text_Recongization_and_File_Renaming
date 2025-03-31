@@ -6,38 +6,38 @@ import nltk
 import ExtractText
 import FindKeyData
 import FileOrg
-#import pandas as pd
 
 print(cv2.__version__)
 print(pytesseract.__version__)
 print(np.__version__)
 print(PIL.__version__)
 print(nltk.__version__)
-#print(pd.__version__)
 
-input = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTap projects\\PennTAP history\\unnamed_file"
-output = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTAP history\\unnamed_file\\Textfiles"
-ExtractText.extract_text_from_folder(input,output)
-print("Extracted text")
-
-input_folder = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTAP history\\unnamed_file\\Textfiles"
-image_folder = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTAP history\\unnamed_file"
-output_folder = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTAP history\\unnamed_file\\complete_images"
-manual_review_folder = "PennTAP history\\unnamed_file\\manual_review_images"
-
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+#
+#
+#   Make the changes to the five lines below
+#
+#
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+unnamed_files = "C:\\Users\\jfg5801\\Desktop\\unnamed_file"
+text_files = "C:\\Users\\jfg5801\\Desktop\\unnamed_file\\Textfiles"
+compled_files = "C:\\Users\\jfg5801\\Desktop\\complete_images"
+manual_review_folder = "C:\\Users\\jfg5801\\Desktop\\manual_review_images"
+CSV_path = "C:\\Users\\jfg5801\\Desktop\\PennTAP_History_1971_1973.csv"
+ 
+# Extract text from images
+ExtractText.extract_text_from_folder(unnamed_files,text_files)
+print("Extracted Text")
+ 
 # Move files based on keywords
-FindKeyData.move_files(input_folder, output_folder, manual_review_folder, image_folder)
-print("Find Key Data")
-
-text_folder = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTAP history\\unnamed_file\\Textfiles"
-image_folder = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTAP history\\unnamed_file\\complete_images"
-folder_path = "C:\\Users\\Owner\\OneDrive\\Desktop\\Coding Projects\\PennTAP_History_1973-1975.csv"
-
-# Initialize the CSV file with headers (run only once)
-FileOrg.initialize_csv(folder_path)
-
-# Add file details
-FileOrg.add_file_details(image_folder, text_folder, folder_path)
+FindKeyData.move_files(text_files, compled_files, manual_review_folder, unnamed_files)
 print("Files Moved")
-
+ 
+# Initialize the CSV file with headers (run only once)
+FileOrg.initialize_csv(CSV_path)
+ 
+# Add file details
+FileOrg.add_file_details(compled_files, text_files, CSV_path)
+ 
 print("Made it to the end")

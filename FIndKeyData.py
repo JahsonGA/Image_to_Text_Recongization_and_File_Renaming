@@ -12,11 +12,14 @@ import shutil as sh
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+import spacy
 
 #globals
 completed_files = []
 completedCount = 0
 manualCount = 0
+nlp = spacy.load('en_core_web_sm')
+
 # Get the list of valid English words
 word_list = words.words()
 
@@ -68,9 +71,21 @@ def word_segmenter(fileName, word_list):
 # Function to extract keywords from text
 # n is the number of keywords should be taken from passage
 def extract_keywords(text, n=10):
-    words = word_tokenize(text.lower())
-    stop_words = set(stopwords.words('english'))
-    words = [word for word in words if word.isalnum() and word not in stop_words]
+    
+    doc = nlp(text)
+    keywords = [ent.text for ent in doc.ents if ent.label_ in ('DATE', 'ORG', 'PERSON', 'EVENT')]
+    
+    if len(keywords) < n:
+        words = word_tokenize(text.lower())
+        stop_words = set(stopwords.words('english'))
+        words = [word for word in words if word.isalnum() and word not in stop_words]
+        keywords += words[:n - len(keywords)]
+
+    return keywords[:n]
+    #! older keyword filer
+    # words = word_tokenize(text.lower())
+    # stop_words = set(stopwords.words('english'))
+    # words = [word for word in words if word.isalnum() and word not in stop_words]
     
     #Stemmer removes prefix/suffix from words. Lemmatization looks for the meaning of words and chance it to its simplest form.
     #which would be better for extraction? Lemmatization because it can reduce the noise and variability, making it better for text recognition.
@@ -83,20 +98,34 @@ def extract_keywords(text, n=10):
     keywords = [word for word, _ in word_freq.most_common(n)]'''
     
     # Create a WordNetLemmatizer object 
-    lemmatizer = WordNetLemmatizer() 
-    words = [lemmatizer.lemmatize(word) for word in words]
+    # lemmatizer = WordNetLemmatizer() 
+    # words = [lemmatizer.lemmatize(word) for word in words]
     '''word_freq = Counter(words)
     keywords = [word for word, _ in word_freq.most_common(n)]'''
-    bi_grams = ngrams(words, 2)
-    word_freq = Counter(words + [' '.join(bg) for bg in bi_grams])
-    keywords = [word for word, _ in word_freq.most_common(n)]
-    
-    return keywords
+    # bi_grams = ngrams(words, 2)
+    # word_freq = Counter(words + [' '.join(bg) for bg in bi_grams])
+    # keywords = [word for word, _ in word_freq.most_common(n)]
+    # 
+    # return keywords
 
 # Function to move files based on keywords
-def move_files(input_folder, output_folder, manual_review_folder, image_folder):
+def move_files(input_folder, output_folder, manual_review_folder, image_folder):    
     global completedCount, manualCount
     
+    for image_name in os.listdir(image_folder):
+        if image_name.endswith(".tif"):
+            new_filename, txt_file, text = read_text_file_and_rename_image(input_folder)
+            
+            if new_filename and new_filename != 'EmptyText':
+                new_filename = new_filename + ".tif"
+                new_filepath = os.path.normpath(os.path.join(output_folder, new_filename))
+                sh.move(os.path.normpath(os.path.join(image_folder, image_name)), new_filepath)
+                completedCount += 1
+            else:
+                sh.move(os.path.normpath(os.path.join(image_folder, image_name)), os.path.normpath(os.path.join(manual_review_folder, image_name)))
+                manualCount += 1
+            
+    '''
     count = 0
     for image_name in os.listdir(image_folder):
         # Sends the text files to be read and stores the new filename, txt_file location, and text summary
@@ -123,6 +152,7 @@ def move_files(input_folder, output_folder, manual_review_folder, image_folder):
             #? this line will have to be put in the FileOrg file
             #os.remove(os.path.normpath(os.path.join(input_folder, txt_file)))
         count += 1
+        '''
         
 #*Compared to online summarizer
 
@@ -196,6 +226,25 @@ def contains_only_stop_words(text):
     return all_stop
 
 def Asummarize_text(text):
+    
+    sentences = [sent.text for sent in nlp(text).sents]
+    
+    if not sentences:
+        return "No meaningful content"
+
+    vectorizer = TfidfVectorizer(stop_words='english')
+
+    try:
+        tfidf_matrix = vectorizer.fit_transform(sentences)
+    except ValueError:
+        return "Empty or invalid text"
+
+    sentence_scores = np.sum(cosine_similarity(tfidf_matrix, tfidf_matrix), axis=1)
+    top_indices = np.argsort(sentence_scores)[::-1][:3]
+
+    return ' '.join([sentences[i] for i in sorted(top_indices)])
+
+'''
     # Tokenize the text into sentences
     sentences = sent_tokenize(text)
     
@@ -238,9 +287,23 @@ def Asummarize_text(text):
     summary = ' '.join([sentences[idx] for idx in sorted(top_sentence_indices)])
 
     return summary
+'''
 
 #* Naming system should follow date, publisher. the key summary will be done the file renaming
 def extract_summary_from_text(text):
+    '''
+    summary = {}
+    date_match = re.search(r'(\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b)|(\b\w+ \d{1,2}, \d{4}\b)', text)
+    publisher_match = re.search(r'(article|news|journal|newspaper|press) ([A-Za-z ]+)', text, re.IGNORECASE)
+    
+    if date_match:
+        summary['date'] = date_match.group()
+    if publisher_match:
+        summary['publisher'] = publisher_match.group(2).strip()
+
+    return summary
+    
+    '''
     summary = {}
     month_map = {
         'January': '01',
@@ -289,6 +352,7 @@ def extract_summary_from_text(text):
         summary['publisher'] = news_match.group()
 
     return summary
+    
 
 def SummaryEnchanced(text):
     #combines the abstractive summary with the keywords found. Should boost overall success rate
@@ -300,7 +364,19 @@ def SummaryEnchanced(text):
     
     return combined_summary
 
-def generate_filename(summary, final_summary):
+def generate_filename(summary, text):
+    
+    date = summary.get('date', 'UnknownDate').replace('/', '-').replace(',', '')
+    publisher = summary.get('publisher', 'UnknownPublisher').replace(' ', '_')
+    
+    keywords = extract_keywords(text)
+    keywords_part = '_'.join(keywords)
+
+    filename = f"{date}_{publisher}_{keywords_part}"
+    filename = re.sub(r'[^\w\-]', '', filename)
+
+    return filename[:100]  # Limit filename length
+'''
     new_file_name = ""
     
     # Add date to the filename if it exists
@@ -322,109 +398,28 @@ def generate_filename(summary, final_summary):
     new_file_name = new_file_name[:100] #trim to 100 characters
 
     return new_file_name.rstrip('-')  # Remove any trailing dash
-
-
-'''def read_text_file_and_rename_image(text_file_path):
-    # returns new_filename, txt_file at the iteration, and text summary. 
-    # Read text from the text file line by line
-    # There was an error where it would read the whole text file as one string without \n characters.
-    #   This caused the problem of the regex being able to match more than it should have.
-    # Iterate over all files in the image folder
-    
-    # when given a path to a folder, iterate through the contents if it is a text file. 
-    #completedArry = []
-    sentinelDate = False
-    for file_name in os.listdir(text_file_path):
-        if file_name.endswith(".txt") and file_name not in completed_files:  # Check if the file is a text file
-            file_path = os.path.join(text_file_path, file_name) # Creates file path to txt
-            new_file_name = ""
-            
-            with open(file_path, 'r') as text_file:
-                summary = {} 
-                strTextFile = text_file.readlines()
-                for line in strTextFile:
-                    summary.update(extract_summary_from_text(line))
-                        
-            # Construct a new file name based on the summary
-            #   If there is a date in the summary add to the file name
-            #   If there is a publisher in the summary add it file name
-            #   If there is already a date in the file name then skip it
-                    if ('date' in summary and sentinelDate == False):
-                        new_file_name += summary['date'] + "_"
-                        sentinelDate = True
-                        
-                        if ('publisher' in summary):
-                            new_file_name += summary['publisher'] + "_"
-                            break
-                        else:
-                            #print("No publisher found for file name in line:\n\t", line)
-                            continue
-                    else:
-                        #print("No date found for file name in line:\n\t", line)
-                        continue
-            
-            text_file.close()
-                
-            # print("START\n")              
-            
-            #* keyword summary can be done with the function to find the summary and then the nltk to find the keywords of the summary. 
-            #*  The threshold should be at most 5 words. 
-            
-            with open(file_path, "r") as summary:
-                text = summary.read()
-            summary.close()
-            
-            # aText = Asummarize_text(text)
-            if(contains_only_stop_words(text)):
-                # Text has only stop words. mark it for removal
-                new_file_name = new_file_name[:0] + '_' + new_file_name[0:]
-                
-                # removes illegal characters
-                new_file_name = re.sub(r'[<>:"/\\|?*\n]', '_', new_file_name)
-                new_file_name = new_file_name.replace('\n', '').replace('-', '')
-                new_file_name = new_file_name[:100] #trim to 100 characters
-                return new_file_name, file_name, text
-            
-            #extr_aText = extract_keywords(Asummarize_text(text)) #old method only uses the keywords found and not the summary with keywords
-            extr_aText = SummaryEnchanced(text) #? 48.8% success rate but needs tunning
-            
-            #print("Summarized using abtract: \n",Asummarize_text(text))   #give summarize of text
-            #print("Extracted words from asum: \n",extr_aText) #gathers 15 keywords
-            #print("\nNew File name 1: ",new_file_name)
-            #input("pause: ")
-            
-            for i in extr_aText:
-                new_file_name += i + "-"
-                    
-            if new_file_name != "":
-                new_file_name = new_file_name.rstrip(new_file_name[-1])
-                #new_file_name += "_"    #otherwise end the file name with a "_"
-                
-            else:
-                new_file_name = ''      #if the new file name is empty then set it to empty
-            
-            # print("\nNew File name 2: ",new_file_name,"\nEND")
-            
-            #completedArry[file_name] = [new_file_name, file_name, text]
-            completed_files.append(file_name)
-            
-            #*mark the file to remove if the first character is a not a digit 
-            #   or the first 11 characters are NODATEFOUND #or not new_file_name[:11] == "NODATEFOUND"
-            if(not new_file_name[0].isdigit()):
-                new_file_name = new_file_name[:0] + '_' + new_file_name[0:]
-                
-            new_file_name = re.sub(r'[<>:"/\\|?*\n]', '_', new_file_name)       # removes illegal characters
-            new_file_name = new_file_name.replace('\n', '').replace('-', '')
-            new_file_name = new_file_name[:100]         #trim to 100 characters
-            return new_file_name, file_name, text       # Return the new file, text_file location, and text gathered. 
-            # What if there is a global variable to count the number of files read in the folder.
-            # It worked
-            
-        #return completedArry # Return the new file, text_file location, and text gathered. 
-
-    return "", "", ""  # Return empty strings if no text files were found'''
+'''
     
 def read_text_file_and_rename_image(text_file_path):
+    
+    for file_name in os.listdir(text_file_path):
+        if file_name.endswith(".txt") and file_name not in completed_files:
+            file_path = os.path.join(text_file_path, file_name)
+            with open(file_path, 'r') as text_file:
+                text = text_file.read()
+            
+            if len(text.strip()) == 0:
+                return "EmptyText", file_name, text
+
+            summary = extract_summary_from_text(text)
+            final_summary = Asummarize_text(text)
+            new_file_name = generate_filename(summary, final_summary)
+
+            completed_files.append(file_name)
+            return new_file_name, file_name, text
+
+    return "", "", ""
+    '''
     for file_name in os.listdir(text_file_path):
         if file_name.endswith(".txt") and file_name not in completed_files:
             file_path = os.path.join(text_file_path, file_name)
@@ -457,6 +452,7 @@ def read_text_file_and_rename_image(text_file_path):
             return new_file_name, file_name, text
 
     return "", "", ""
+    '''
 
 if __name__ == "__main__":
     input_folder = ".\\PennTAP history\\unnamed_file\\Textfiles"
@@ -465,5 +461,11 @@ if __name__ == "__main__":
     manual_review_folder = ".\\PennTAP history\\manual_review_images"
     # Move files based on keywords
     move_files(input_folder, output_folder, manual_review_folder, image_folder)
-    print("Success: ", completedCount, "Fail: ", manualCount)
-    print("Success Rate: ", (completedCount / (completedCount + manualCount)) * 100)
+    total_files = completedCount + manualCount
+    if total_files > 0:
+        success_rate = (completedCount / total_files) * 100
+        print("Success Rate: ", success_rate)
+    else:
+        print("No files were processed.")
+    #print("Success: ", completedCount, "Fail: ", manualCount)
+    #print("Success Rate: ", (completedCount / (completedCount + manualCount)) * 100)
