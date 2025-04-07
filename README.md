@@ -60,8 +60,11 @@ Faxtool can be used to combine articles that were too large to scan over.
 TODO: edit the error systax for better debugging and correction.
 
 ### 3/26/25
-reestablishing quality back to how it was before. With the spacy package with the english model with the command:
+reestablishing quality back to how it was before. With the spacy package with the english model with the commands:
 ```python -m spacy download en```
+
+### 4/7/25
+Completed software to meet the needs of PennTAP and updated code to work with any Windows OS.
 
 ## Links to useful site:
 https://trenton3983.github.io/posts/ocr-image-processing-pytesseract-cv2/
