@@ -21,7 +21,7 @@ package = os.getenv("package")
 #           Replace what is between ' with the location of the tesseract.exe file
 #
 """
-pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = r'You path here'
 
 # Extract edges using Canny edge detection for feature extraction
 '''Shows the edited image with boxes will the letter opencv sees'''
@@ -47,8 +47,6 @@ def show_detected_text(image_path):
 '''Shows the edited image with boxes will the letter opencv sees when given a image object rather than a path string'''    
 
 def show_detected_text_from_image(image):
-    # Read the image from preprocessed image
-    # image = preprocessing(image)
     # Perform text detection using pytesseract
     boxes = pytesseract.image_to_boxes(image)        
         
@@ -83,9 +81,6 @@ def text_detection(image_path):
             (text_width, text_height), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)
             cv2.rectangle(img, (x, y - text_height - 5), (x + text_width, y), (255, 255, 255), -1)
             cv2.putText(img, text, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1)
-            
-            # print(f"Confidence: {confidence_level}")
-            # print(f"Text: {text}\n")
 
     # Display the image
     # cv2.imshow('Detected Text', cv2.resize(img,(700,850)))
@@ -95,7 +90,7 @@ def remove_noise_and_smooth(image):
     # Increase Contrast
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
-    #adaptive threshold to filter out noise and enhance text visibility                             blocksize,constant C
+    #adaptive threshold to filter out noise and enhance text visibility blocksize,constant C
     #   average threshold is subtracted by this constant. The hight the values help keep the average when images have varying lighting
     filter = cv2.adaptiveThreshold(gray_image,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,9,41)
     #* changed ADAPTIVE_THRESH_MEAN_C to ADAPTIVE_THRESH_GAUSSIAN_C
@@ -105,10 +100,6 @@ def remove_noise_and_smooth(image):
     #kernel for morphological ops: erosion and dilation
     #   creates a matrix. used to smooth out an image. the large the matrix more smoothing done
     kernel = np.ones((1,1), np.uint8)
-    #* changed matrix size to 2x2 from 1x1
-        #! results in 15.2%
-    #* changed matrix size to 3x3
-        #! 1/91
     
     # Perform morphological opening to remove small noise regions
     opening = cv2.morphologyEx(filter, cv2.MORPH_OPEN, kernel)
@@ -123,30 +114,18 @@ def remove_noise_and_smooth(image):
     return or_img
     
 def preprocess_for_ocr(image):
-    #smoothing image
-    # image = cv2.imread(image_path) #needed if imread() was not called yet
-    
+    #smoothing image    
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
     #binary thresholding
     #pixels with intensity greater than or equal to 88 are set to white while other are set to black
     ret1, th1 = cv2.threshold(image,88,255,cv2.THRESH_BINARY)
-    #* increase divide between white and black pixel to 78 from 88
-    #!  results of 40.2% 37/55
-    #* increase divide between white and black pixel to 98 from 88
-    #!  results of 40.2% 37/55
     
     #OTSU's Thresholding
     ret2, th2 = cv2.threshold(th1,0,255,cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     
     #gaussian blurring to reduce noise
     blur = cv2.GaussianBlur(th2,(9,9),0)
-    #* increased matrix to 9x9 from 5x5
-    #?  results in 42.68% 35/57
-    #* increased matrix to 11x11 from 9x9
-    #!  results in 40.2% 37/55
-    #* increased matrix to 10x10 from 9x9
-    #!  failed to complie, must be odd matrix
     
     #OTSU's Thresholding
     ret3, th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -186,33 +165,7 @@ def preprocess_multi_page_tiff(image_path):
 
 # Extract text found in the image and write to a text file
 def extract_text_from_folder(input, output):
-    '''# Iterate over all files in the image folder
-    for file_name in os.listdir(input):
-        # Check if the file is a TIFF image
-        if file_name.endswith(".tif"):
-            # Construct the full path to the image file
-            image_path = os.path.join(input, file_name)    
-            # Extract text from the image
-            # Perform OCR using pytesseract
-            #? newest image dection and smoothing
-            image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-            img = preprocess_multi_page_tiff(image)
-            # img = remove_noise_and_smooth(image)          # %42.2
-            
-            #* NOTE proprocessing2 the blue needs uncommenting before other test
-            text = pytesseract.image_to_string(img) #needed for preprocessing 
-                      
-            # Calls display funcation
-            # show_detected_text(image_path)
-            # show_detected_text_from_image(img)
-            
-            # Construct the full path to the text file
-            text_file_name = os.path.splitext(file_name)[0] + ".txt"
-            text_file_path = os.path.join(output, text_file_name)
-            # Write the extracted text to the text file
-            with open(text_file_path, 'w') as text_file:
-                text_file.write(text)'''
-     # Iterate over all files in the input folder
+    # Iterate over all files in the input folder
     for file_name in os.listdir(input):
         # Construct the full path to the file
         image_path = os.path.join(input, file_name)

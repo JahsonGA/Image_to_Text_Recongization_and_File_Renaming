@@ -20,11 +20,11 @@ print(nltk.__version__)
 #
 #
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-unnamed_files = "C:\\Users\\jfg5801\\Desktop\\unnamed_file"
-text_files = "C:\\Users\\jfg5801\\Desktop\\unnamed_file\\Textfiles"
-compled_files = "C:\\Users\\jfg5801\\Desktop\\complete_images"
-manual_review_folder = "C:\\Users\\jfg5801\\Desktop\\manual_review_images"
-CSV_path = "C:\\Users\\jfg5801\\Desktop\\PennTAP_History_1971_1973.csv"
+unnamed_files = "YourPathHere\\unnamed_file"
+text_files = "YourPathHere\\unnamed_file"
+compled_files = "YourPathHere\\unnamed_file"
+manual_review_folder = "YourPathHere\\unnamed_file"
+CSV_path = "YourPathHere\\unnamed_file"
  
 # Extract text from images
 ExtractText.extract_text_from_folder(unnamed_files,text_files)
@@ -40,4 +40,4 @@ FileOrg.initialize_csv(CSV_path)
 # Add file details
 FileOrg.add_file_details(compled_files, text_files, CSV_path)
  
-print("Made it to the end")
+print("\n\nMade it to the end")

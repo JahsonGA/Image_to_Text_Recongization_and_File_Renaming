@@ -4,7 +4,6 @@ from datetime import datetime
 import os
 import FindKeyData
 import ExtractText
-from ExtractText import process_tiff_pages, preprocess_multi_page_tiff
 from pytesseract import image_to_string
 
 # Function to append file data to CSV
@@ -19,8 +18,6 @@ def write_to_csv(file_name, article_date, description, tags, csv_file='PennTAP_H
         # Write the row to the CSV file
         writer.writerow([file_name, date_uploaded, article_date, description, tags])
     
-    #print(f"File '{file_name}' has been added to {csv_file}.")
-
 # Function to prompt user for input and add the file details to the CSV
 def add_file_details(image_folder,textfolder,folder_path):
     try:
@@ -83,7 +80,6 @@ def initialize_csv(csv_file='PennTAP_History_1971-1973.csv'):
             writer = csv.writer(file)
             # Write the header row
             writer.writerow(["File Name", "Date Uploaded", "Date of Article", "Description", "Tags"])
-        #print(f"Created new CSV file '{csv_file}' with headers.")
 
 if __name__ == "__main__":
     text_folder = ".\\unnamed_file\\Textfiles"
