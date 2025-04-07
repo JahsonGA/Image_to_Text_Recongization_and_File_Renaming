@@ -33,20 +33,19 @@ def word_segmenter(fileName, word_list):
     #print(word_list)
     
     # missing date
-    if(new_fileName.isdigit()):
-        if (new_fileName[:-2] == "00"):
-            # missing month
-            if (new_fileName[:-4] == "0000"):
-                #only year found. Store the first 4 characters 
-                new_fileName = new_fileName[:4] + "_" + new_fileName[4:6] + "_" + new_fileName[6:8]
-            
-            #date month and year found. store first 8 characters
-            else:
-                new_fileName = new_fileName[:2] + "_" + new_fileName[2:4] + "_" + new_fileName[4:8]
-        
-        #month and year found. store first 6 characters
+    if new_fileName.isdigit():
+        if new_fileName[:4] == "0000":
+            # Missing year (unlikely, but handle it)
+            new_fileName = "unknown_date"
+        elif new_fileName[4:6] == "00":
+            # Missing month, only year is present
+            new_fileName = f"{new_fileName[:4]}_00_00"
+        elif new_fileName[6:8] == "00":
+            # Missing day, month and year are present
+            new_fileName = f"{new_fileName[:4]}_{new_fileName[4:6]}_00"
         else:
-            new_fileName = new_fileName[:2] + "_" + new_fileName[2:6] + "_" + new_fileName[6:]
+            # Date month and year are present
+            new_fileName = f"{new_fileName[:4]}_{new_fileName[4:6]}_{new_fileName[6:8]}"
 
     # Iterate over the string and segment it based on word_list
     for i in range(1, n + 1):
