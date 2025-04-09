@@ -136,14 +136,17 @@ def preprocess_for_ocr(image):
 def process_tiff_pages(image_path):
     images = []
     try:
-        with Image.open(image_path) as img:
-            for page in range(img.n_frames):  # Iterate through pages
-                img.seek(page)
-                if img.mode != 'RGB':  # Ensure the image is in RGB mode
-                    img = img.convert('RGB')
-                # Convert to OpenCV format for further processing
-                cv_image = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-                images.append(cv_image)
+        if(os.path.isfile(image_path)):
+            with Image.open(image_path) as img:
+                for page in range(img.n_frames):  # Iterate through pages
+                    img.seek(page)
+                    if img.mode != 'RGB':  # Ensure the image is in RGB mode
+                        img = img.convert('RGB')
+                    # Convert to OpenCV format for further processing
+                    cv_image = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+                    images.append(cv_image)
+        else:
+            print("Next file")
     except PermissionError as e:
         print(f"Permission denied: {image_path} - {e}\n\n If the file is open, close it and try again.")
     except FileNotFoundError as e:
@@ -170,8 +173,8 @@ def extract_text_from_folder(input, output):
         # Construct the full path to the file
         image_path = os.path.join(input, file_name)
 
-        # Check if the file is a TIFF image
-        if file_name.endswith(".tif"):
+        # Check if the file is a TIFF image or a folder
+        if os.path.isfile(image_path) and file_name.lower().endswith(".tif"):
             print(f"Processing TIFF file: {file_name}")
             # Preprocess multi-page TIFF
             preprocessed_images = preprocess_multi_page_tiff(image_path)
