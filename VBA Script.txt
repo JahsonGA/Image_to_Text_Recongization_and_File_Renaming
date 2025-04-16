@@ -17,10 +17,10 @@ Sub ProcessMessagesInFolder()
     
     ' Set the folder to check
     Set objNamespace = Application.GetNamespace("MAPI")
-    Set objFolder = objNamespace.Folders("jfg5801@psu.edu").Folders("Inbox").Folders("PennTAP History").Folders("1973_1975")
+    Set objFolder = objNamespace.Folders("YOUREMAIL_HERE").Folders("Inbox").Folders("FOLDERS NAME HERE")
     
     ' Define folder path on the desktop
-    strFolderpath = CreateObject("WScript.Shell").SpecialFolders("Desktop") & "\1973-1975\unnamed_file\"
+    strFolderpath = CreateObject("WScript.Shell").SpecialFolders("FOLDER_ON_COMPUTER") & "PATH_TO_SUB_FOLDER"
     
     ' Create FileSystemObject to check/create folder if necessary
     Set FS = CreateObject("Scripting.FileSystemObject")
@@ -46,7 +46,7 @@ Sub ProcessMessagesInFolder()
             Next recipient
             ' Check if the email meets the conditions
             If emailToYou = True And _
-               LCase(objMail.SenderEmailAddress) = "ricohscanner@psu.edu" And _
+               LCase(objMail.SenderEmailAddress) = "SCANNER EMAIL NAME HERE" And _
                objMail.Attachments.Count > 0 And _
                objMail.UnRead = True Then
                
